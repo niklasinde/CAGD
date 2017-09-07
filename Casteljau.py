@@ -24,11 +24,10 @@ class casteljau():
 
         grid()
 
-if __name__=='__main__':
-    pts = array([[0.05, 0.05], [0.1, 0.2], [0.5, 0.3], [0.6, 0.2], [0.5, -0.1]])
-    p = casteljau(pts)
-    p.run([0, 0.6])
-    show()
+pts = array([[0.05, 0.05], [0.1, 0.2], [0.5, 0.3], [0.6, 0.2], [0.5, -0.1]])
+p = casteljau(pts)
+p.run([0, 0.6])
+show()
 
 
 
