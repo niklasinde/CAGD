@@ -2,34 +2,58 @@ from matplotlib.pyplot import *
 from numpy import *
 
 class casteljau():
-    def __init__(self, pts, *kwargs):
+    def __init__(self, pts:'list[[x, y], []]', *kwargs):
+        '''After constructing the object
+           with the control points, execute
+           the following methods
+           self.run(domain[a,b], nsp:=100)
+           self.render()'''
         self.pts = pts
 
-    def getB(self, i, k):
+    def _b(self, i, k):
         if k == 0:
-            return lambda t: self.pts[i-1, :]
+            return lambda t: self.pts[i, :]
         else:
-            return lambda t: (1-t)*self.getB(i+1, k-1)(t) + t*self.getB(i, k-1)(t)
+            return lambda t: (1-t)*self._b(i, k-1)(t) + t*self._b(i+1, k-1)(t)
 
-    def run(self, domain:'list [a, b]', nsp = 100) -> 'plot':
-        b      = self.pts
-        B      = self.getB(0, len(self.pts))
-        sample = linspace(min(b[:, 0]), max(b[:, 0]), nsp)
-        coords = array([list(B(_)) for _ in sample])
+    def _verify(self, x):
+        b = self.pts
+        left, right = min(b[:, 0]), max(b[:, 0])
+        lower, upper = min(b[:, 1]), max(b[:, 1])
+        if left > x[0] or right < x[0]: return False
+        elif lower > x[1] or upper < x[1]: return False
+        else: return True
 
-        plot(coords[:, 0], coords[:, 1], c='r')
+    def render(self, *kwargs) -> 'graph':
+        b       = self.pts
+        coords  = self.coords
+        outside = array([pt for pt in coords if self._verify(pt) == False])
+        inside  = array([pt for pt in coords if self._verify(pt) == True])
+        try:
+            plot(outside[:, 0], outside[:, 1], '--r')
+        except Exception:
+            pass
+
+        try:
+            plot(inside[:, 0], inside[:, 1], c='r')
+        except Exception:
+            pass
+
         scatter(b[:, 0], b[:, 1])
-        for _ in range(len(self.pts)-1):
-            plot([b[_, 0], b[_+1, 0]], [b[_, 1], b[_+1, 1]], c='k')
 
-        grid()
+        for idx in range(len(self.pts)-1):
+            plot([b[idx, 0], b[idx+1, 0]], [b[idx, 1], b[idx+1, 1]], c='k')
+
+    def run(self, domain:'list [a, b]', nsp = 100, *kwargs) -> 'self.coords':
+        b      = self.pts
+        B      = self._b(0, len(self.pts)-1)
+        sample = linspace(domain[0], domain[1], nsp)
+        self.coords = array([list(B(_)) for _ in sample])
+
 
 pts = array([[0.05, 0.05], [0.1, 0.2], [0.5, 0.3], [0.6, 0.2], [0.5, -0.1]])
 p = casteljau(pts)
-p.run([0, 0.6])
+p.run([0, 1.2])
+p.render()
+grid()
 show()
-
-
-
-
-
