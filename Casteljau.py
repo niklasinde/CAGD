@@ -1,5 +1,6 @@
 from matplotlib.pyplot import *
 from numpy import *
+rcParams["figure.figsize"] = [16, 2]
 
 class casteljau():
     def __init__(self, pts:'list[[x, y], []]', *kwargs):
@@ -51,9 +52,10 @@ class casteljau():
         self.coords = array([list(B(_)) for _ in sample])
 
 
-pts = array([[0.05, 0.05], [0.1, 0.2], [0.5, 0.3], [0.6, 0.2], [0.5, -0.1]])
+pts = array([[0.05, 0.02], [0.1, 0.2], [0.2, -0.1], [0.3, 0], [0.4, 0.1], [0.7, 0.2]])
 p = casteljau(pts)
 p.run([0, 1.2])
 p.render()
 grid()
+#savefig('casteljau1.pdf')
 show()
