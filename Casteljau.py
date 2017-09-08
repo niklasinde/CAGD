@@ -1,32 +1,45 @@
 from matplotlib.pyplot import *
 from numpy import *
+from itertools import *
 rcParams["figure.figsize"] = [16, 2]
 
-class casteljau():
-    def __init__(self, pts:'list[[x, y], []]', *kwargs):
-        '''After constructing the object
-           with the control points, execute
-           the following methods
-           self.run(domain[a,b], nsp:=100)
-           self.render()'''
-        self.pts = pts
+class casteljau:
+    def __init__(self, pts:'[[x,y],]'):
+        '''The valid methods are
+           __call__,
+           __add__,
+           __div__'''
+        self.pts = array(pts)
+        self.left, self.right = min(self.pts[:, 0]), max(self.pts[:, 0])
+        self.lower, self.upper = min(self.pts[:, 1]), max(self.pts[:, 1])
+        self.n = len(pts)-1
 
-    def _b(self, i, k):
+    def __add__(self, other:'obj'):
+        tmp = array([_ for _ in chain(self.pts, other.pts)])
+        return casteljau(tmp)
+
+    def __div__(self, other:'obj'):
+        pass
+
+    def __call__(self, domain:'list [a, b]', nsp = 100, colour = 'r'):
+        B      = self._b(0, self.n)
+        sample = linspace(domain[0], domain[1], nsp)
+        self.coords = array([list(B(_)) for _ in sample])
+        self._render(colour)
+
+
+    def _b(self, i, k) -> 'func':
         if k == 0:
             return lambda t: self.pts[i, :]
         else:
             return lambda t: (1-t)*self._b(i, k-1)(t) + t*self._b(i+1, k-1)(t)
 
-    def _verify(self, x):
-        b = self.pts
-        left, right = min(b[:, 0]), max(b[:, 0])
-        lower, upper = min(b[:, 1]), max(b[:, 1])
-        if left > x[0] or right < x[0]: return False
-        elif lower > x[1] or upper < x[1]: return False
+    def _verify(self, x) -> 'Bolean':
+        if x[0] < self.left or x[0] > self.right: return False
+        elif x[1] < self.lower or x[1] > self.upper: return False
         else: return True
 
-    def render(self, *kwargs) -> 'graph':
-        b       = self.pts
+    def _render(self, colour) -> 'graph':
         coords  = self.coords
         outside = array([pt for pt in coords if self._verify(pt) == False])
         inside  = array([pt for pt in coords if self._verify(pt) == True])
@@ -36,26 +49,31 @@ class casteljau():
             pass
 
         try:
-            plot(inside[:, 0], inside[:, 1], c='r')
+            plot(inside[:, 0], inside[:, 1], c=colour)
         except Exception:
             pass
 
-        scatter(b[:, 0], b[:, 1])
+        scatter(self.pts[:, 0],
+                self.pts[:, 1])
 
         for idx in range(len(self.pts)-1):
-            plot([b[idx, 0], b[idx+1, 0]], [b[idx, 1], b[idx+1, 1]], c='k')
-
-    def run(self, domain:'list [a, b]', nsp = 100, *kwargs) -> 'self.coords':
-        b      = self.pts
-        B      = self._b(0, len(self.pts)-1)
-        sample = linspace(domain[0], domain[1], nsp)
-        self.coords = array([list(B(_)) for _ in sample])
+            plot([self.pts[idx, 0], self.pts[idx+1, 0]],
+                 [self.pts[idx, 1], self.pts[idx+1, 1]], c='k')
 
 
-pts = array([[0.05, 0.02], [0.1, 0.2], [0.2, -0.1], [0.3, 0], [0.4, 0.1], [0.7, 0.2]])
+pts = [[0.05, 0.02], [0.1, 0.2],
+       [0.2, -0.1], [0.3, 0],
+       [0.4, 0.1], [0.7, 0.2]]
 p = casteljau(pts)
-p.run([0, 1.2])
-p.render()
+p([0, 1.2])
+
+pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
+g = casteljau(pts2)
+g([0, 1.2], colour='b')
+
+f = p + g
+f([0,1], colour='k')
+
 grid()
 #savefig('casteljau1.pdf')
 show()
