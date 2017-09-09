@@ -46,8 +46,8 @@ class casteljau:
         return self.__mul__(other, CompositeBezier)
 
     def __call__(self, domain:'list [a, b]', nsp = 100, colour = 'r'):
-        self.coords = array([list(self.Bezier(t))
-                             for t in linspace(domain[0], domain[1], nsp)])
+        self.coords = iter(map(self.Bezier
+                               ,linspace(domain[0], domain[1], nsp)))
         self._render(colour)
 
     def _generateBezier(self, Basis) -> 'func':
@@ -87,12 +87,15 @@ class casteljau:
                 plot([self.pts[idx, 0], self.pts[idx+1, 0]],
                      [self.pts[idx, 1], self.pts[idx+1, 1]], c='k', alpha=0.2)
 
-        outside = array([pt for pt in self.coords
-                         if self._assertHull(pt) == False])
-        inside  = array([pt for pt in self.coords
-                         if self._assertHull(pt) == True])
-        PlotCurve(outside, inside)
-        PlotPoints()
+        outside, inside = [], []
+        for tmp in self.coords:
+            if self._assertHull(array(tmp)):
+                inside.append(tmp)
+            else:
+                outside.append(tmp)
+        else:
+            PlotCurve(array(outside), array(inside))
+            PlotPoints()
 
 
 pts = [[0.05, 0.02], [0.1, 0.2],
