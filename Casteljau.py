@@ -2,7 +2,14 @@ from matplotlib.pyplot import *
 from numpy import *
 from itertools import *
 from types import *
+import contextlib
 rcParams["figure.figsize"] = [16, 2]
+@contextlib.contextmanager
+def ignored(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
 
 class casteljau:
     def __init__(self, pts:'[[x,y],]', Basis=None):
@@ -11,19 +18,14 @@ class casteljau:
            __div__,
            __add__,
            __call__'''
-        self.pts = array(pts)
-        self.left, self.right = min(self.pts[:, 0]), max(self.pts[:, 0])
-        self.lower, self.upper = min(self.pts[:, 1]), max(self.pts[:, 1])
-        self.n = len(pts)-1
-        if Basis == None:
-            self.B = self._b(0, self.n)
-        else:
-            self.B = Basis
+        self.pts, self.n = array(pts), len(pts)-1
+        self._generateBezier(Basis)
+        self._generateHull()
 
     def __mul__(self, other:'obj', Basis=None):
         assert self._TrivialReject(other)
-        tmp = array([_ for _ in chain(self.pts, other.pts)])
-        return casteljau(tmp, Basis)
+        return casteljau(array([pt for pt in chain(self.pts, other.pts)]),
+                         Basis)
 
     def __truediv__(self, m:'integer'):
         assert type(m) is int, 'TypeError'
@@ -31,32 +33,38 @@ class casteljau:
 
     def __add__(self, other:'obj'):
         assert self._TrivialReject(other)
-        def test(t):
-            curve1 = self.B(t)
-            curve2 = other.B(t-1)
-            if self._InHull(curve1):
+        def CompositeBezier(t):
+            curve1 = self.Bezier(t)
+            curve2 = other.Bezier(t-1)
+            if self._assertHull(curve1):
                 return curve1
-            elif other._InHull(curve2):
+            elif other._assertHull(curve2):
                 return curve2
             else:
                 return array([0, 0])
 
-        tmp = self.__mul__(other, test)
-        return tmp
+        return self.__mul__(other, CompositeBezier)
 
     def __call__(self, domain:'list [a, b]', nsp = 100, colour = 'r'):
-        sample = linspace(domain[0], domain[1], nsp)
-        self.coords = array([list(self.B(t)) for t in sample])
+        self.coords = array([list(self.Bezier(t))
+                             for t in linspace(domain[0], domain[1], nsp)])
         self._render(colour)
 
+    def _generateBezier(self, Basis) -> 'func':
+        def b(i, k):
+            if k == 0: return lambda _: self.pts[i, :]
+            else: return lambda t: (1-t)*b(i, k-1)(t) + t*b(i+1, k-1)(t)
 
-    def _b(self, i, k) -> 'func':
-        if k == 0:
-            return lambda t: self.pts[i, :]
+        if Basis == None:
+            self.Bezier = b(0, self.n)
         else:
-            return lambda t: (1-t)*self._b(i, k-1)(t) + t*self._b(i+1, k-1)(t)
+            self.Bezier = Basis
 
-    def _InHull(self, x) -> 'Bolean':
+    def _generateHull(self):
+        self.left, self.right = min(self.pts[:, 0]), max(self.pts[:, 0])
+        self.lower, self.upper = min(self.pts[:, 1]), max(self.pts[:, 1])
+
+    def _assertHull(self, x) -> 'Bolean':
         if x[0] < self.left or x[0] > self.right: return False
         elif x[1] < self.lower or x[1] > self.upper: return False
         else: return True
@@ -66,15 +74,10 @@ class casteljau:
 
     def _render(self, colour='r') -> 'graph':
         def PlotCurve(_outside, _inside):
-            try:
+            with ignored(Exception):
                 plot(_outside[:, 0], _outside[:, 1], '--r')
-            except Exception:
-                pass
-
-            try:
+            with ignored(Exception):
                 plot(_inside[:, 0], _inside[:, 1], c=colour)
-            except Exception:
-                pass
 
         def PlotPoints():
             scatter(self.pts[:, 0],
@@ -84,8 +87,10 @@ class casteljau:
                 plot([self.pts[idx, 0], self.pts[idx+1, 0]],
                      [self.pts[idx, 1], self.pts[idx+1, 1]], c='k', alpha=0.2)
 
-        outside = array([pt for pt in self.coords if self._InHull(pt) == False])
-        inside  = array([pt for pt in self.coords if self._InHull(pt) == True])
+        outside = array([pt for pt in self.coords
+                         if self._assertHull(pt) == False])
+        inside  = array([pt for pt in self.coords
+                         if self._assertHull(pt) == True])
         PlotCurve(outside, inside)
         PlotPoints()
 
