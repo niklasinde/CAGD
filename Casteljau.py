@@ -46,9 +46,20 @@ class casteljau:
         return self.__mul__(other, CompositeBezier)
 
     def __call__(self, domain:'list [a, b]', nsp = 100, colour = 'r'):
-        self.coords = array([list(self.Bezier(t))
-                             for t in linspace(domain[0], domain[1], nsp)])
+        self.coords = iter(map(self.Bezier
+                               ,linspace(domain[0], domain[1], nsp)))
         self._render(colour)
+
+    def runALL(self):
+        def asd():
+            t = 0.5; b = self.Bezier(t)
+            scatter(b[0], b[1])
+        asd()
+        n = self.n
+        for k in range(self.n):
+            self.n -= 1
+            self._generateBezier(None)
+            asd()
 
     def _generateBezier(self, Basis) -> 'func':
         def b(i, k):
@@ -87,30 +98,36 @@ class casteljau:
                 plot([self.pts[idx, 0], self.pts[idx+1, 0]],
                      [self.pts[idx, 1], self.pts[idx+1, 1]], c='k', alpha=0.2)
 
-        outside = array([pt for pt in self.coords
-                         if self._assertHull(pt) == False])
-        inside  = array([pt for pt in self.coords
-                         if self._assertHull(pt) == True])
-        PlotCurve(outside, inside)
-        PlotPoints()
+        outside, inside = [], []
+        for tmp in self.coords:
+            if self._assertHull(array(tmp)):
+                inside.append(tmp)
+            else:
+                outside.append(tmp)
+        else:
+            PlotCurve(array(outside), array(inside))
+            PlotPoints()
 
 
 pts = [[0.05, 0.02], [0.1, 0.2],
        [0.2, -0.1], [0.3, 0],
        [0.4, 0.1], [0.7, 0.2]]
 p = casteljau(pts)
-#p([0, 1.2])
+p([0, 1.2])
+p.runALL()
 
-pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
-g = casteljau(pts2)
+#pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
+#g = casteljau(pts2)
 #g([0, 1.2], colour='b')
 
 #f = p * g
 #f([0,1], colour='k')
 
-s = p + g
-s([0, 2])
+#s = p + g
+#s([0, 2])
 
 grid()
+#ylim(-0.2, 0.4)
+#xlim(-0.2, 1.4)
 #savefig('casteljau1.pdf')
 show()
