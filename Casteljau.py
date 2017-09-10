@@ -50,6 +50,17 @@ class casteljau:
                                ,linspace(domain[0], domain[1], nsp)))
         self._render(colour)
 
+    def runALL(self):
+        def asd():
+            t = 0.5; b = self.Bezier(t)
+            scatter(b[0], b[1])
+        asd()
+        n = self.n
+        for k in range(self.n):
+            self.n -= 1
+            self._generateBezier(None)
+            asd()
+
     def _generateBezier(self, Basis) -> 'func':
         def b(i, k):
             if k == 0: return lambda _: self.pts[i, :]
@@ -102,18 +113,21 @@ pts = [[0.05, 0.02], [0.1, 0.2],
        [0.2, -0.1], [0.3, 0],
        [0.4, 0.1], [0.7, 0.2]]
 p = casteljau(pts)
-#p([0, 1.2])
+p([0, 1.2])
+p.runALL()
 
-pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
-g = casteljau(pts2)
+#pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
+#g = casteljau(pts2)
 #g([0, 1.2], colour='b')
 
 #f = p * g
 #f([0,1], colour='k')
 
-s = p + g
-s([0, 2])
+#s = p + g
+#s([0, 2])
 
 grid()
+#ylim(-0.2, 0.4)
+#xlim(-0.2, 1.4)
 #savefig('casteljau1.pdf')
 show()
