@@ -3,6 +3,7 @@ from numpy import *
 from itertools import *
 from types import *
 import contextlib
+from prodjec1 import convexhull
 rcParams["figure.figsize"] = [16, 2]
 @contextlib.contextmanager
 def ignored(*exceptions):
@@ -61,13 +62,16 @@ class casteljau:
             self.Bezier = Basis
 
     def _generateHull(self):
-        self.left, self.right = min(self.pts[:, 0]), max(self.pts[:, 0])
-        self.lower, self.upper = min(self.pts[:, 1]), max(self.pts[:, 1])
+        hull = convexhull(self.pts)
+        #self.left, self.right = min(self.pts[:, 0]), max(self.pts[:, 0])
+        #self.lower, self.upper = min(self.pts[:, 1]), max(self.pts[:, 1])
 
     def _assertHull(self, x) -> 'Bolean':
-        if x[0] < self.left or x[0] > self.right: return False
-        elif x[1] < self.lower or x[1] > self.upper: return False
-        else: return True
+        return hull.checker(x)
+
+        #if x[0] < self.left or x[0] > self.right: return False
+        #elif x[1] < self.lower or x[1] > self.upper: return False
+        #else: return True
 
     def _TrivialReject(self, other:'obj'):
         return True
@@ -102,21 +106,22 @@ pts = [[0.05, 0.02], [0.1, 0.2],
        [0.2, -0.1], [0.3, 0],
        [0.4, 0.1], [0.7, 0.2]]
 p = casteljau(pts)
-#p([0, 1], colour = 'k')
+p([0, 1], colour = 'k')
 
 
-pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
-g = casteljau(pts2)
+#pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
+#g = casteljau(pts2)
 #g([0, 1], colour='k')
 
-f = p * g
-f([0,1], colour='k')
+
+#f = p * g
+#f([0,1], colour='k')
 
 #s = p + g
 #s([0, 2])
 
-grid()
-ylim(-0.2, 0.4)
-xlim(-0.2, 1.4)
-savefig('casteljau3.pdf')
-show()
+#grid()
+#ylim(-0.2, 0.4)
+#xlim(-0.2, 1.4)
+#savefig('casteljau3.pdf')
+#show()
