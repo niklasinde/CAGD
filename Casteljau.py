@@ -62,12 +62,12 @@ class casteljau:
             self.Bezier = Basis
 
     def _generateHull(self):
-        hull = convexhull(self.pts)
+        self.hull = convexhull(list(list(x) for x in self.pts))
         #self.left, self.right = min(self.pts[:, 0]), max(self.pts[:, 0])
         #self.lower, self.upper = min(self.pts[:, 1]), max(self.pts[:, 1])
 
     def _assertHull(self, x) -> 'Bolean':
-        return hull.checker(x)
+        return self.hull.checker(list(x))
 
         #if x[0] < self.left or x[0] > self.right: return False
         #elif x[1] < self.lower or x[1] > self.upper: return False
