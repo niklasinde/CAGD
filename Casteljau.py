@@ -75,7 +75,7 @@ class casteljau:
     def _render(self, colour='r') -> 'graph':
         def PlotCurve(_outside, _inside):
             with ignored(Exception):
-                plot(_outside[:, 0], _outside[:, 1], '--r')
+                plot(_outside[:, 0], _outside[:, 1], '--k')
             with ignored(Exception):
                 plot(_inside[:, 0], _inside[:, 1], c=colour)
 
@@ -102,21 +102,21 @@ pts = [[0.05, 0.02], [0.1, 0.2],
        [0.2, -0.1], [0.3, 0],
        [0.4, 0.1], [0.7, 0.2]]
 p = casteljau(pts)
-p([0, 1.2])
+#p([0, 1], colour = 'k')
 
 
-#pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
-#g = casteljau(pts2)
-#g([0, 1.2], colour='b')
+pts2 = [[0.7,0.2], [0.9, -0.1], [1.3, 0]]
+g = casteljau(pts2)
+#g([0, 1], colour='k')
 
-#f = p * g
-#f([0,1], colour='k')
+f = p * g
+f([0,1], colour='k')
 
 #s = p + g
 #s([0, 2])
 
 grid()
-#ylim(-0.2, 0.4)
-#xlim(-0.2, 1.4)
-#savefig('casteljau1.pdf')
+ylim(-0.2, 0.4)
+xlim(-0.2, 1.4)
+savefig('casteljau3.pdf')
 show()
