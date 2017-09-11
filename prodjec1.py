@@ -14,7 +14,7 @@ class convexhull:
         """ The points need to be in the form [[x_0,y_o],[x_1,y_1],[x_2,y_2]...[x_n,y_n]]"""
     
         self.points = points
-        self.loader()
+        self._loader()
         
     
     def _upperpoints(self,p0,p):
@@ -73,41 +73,43 @@ class convexhull:
         
     def _loader(self):
         """ function to calculate the upper and lower points of the cunvex hull """
-        points = self.points
-        points = sorted(points)
+        points = sorted(self.points)
         
-        upper = [points[0]]
-        lower = [points[0]]
         
-        pi , ptsu  = self._upperpoints(upper[-1],points[1:])
-        pj, ptsl = self._lowerpoints(lower[-1],points[1:])
+        upper,lower = [points[0]],[points[0]]
+        ptsu,ptsl  = points[1:],points[1:]
+        
         while True:
-            upper.append(pi)
             pi , ptsu = self._upperpoints(upper[-1],ptsu)
             if pi == None:
                 break
+            else:
+                upper.append(pi)
         self.upper = upper
         
+        
         while True:
-            lower.append(pj)
-            
             pj , ptsl = self._lowerpoints(lower[-1],ptsl)
 
             if pj == None:
                 break
+            else:
+                lower.append(pj)
+                
+                
         # Connection the dots.
         if lower[-1][0]==upper[-1][0] and lower[-1][1]!=upper[-1][1]:
             lower.append(upper[-1])
         self.lower = lower
         
-    def __call__(self,x:"list[x,y] or [[x_0,y_0],...,[x_n,y_n]])":       
+    def __call__(self,x:"list[x,y] or [[x_0,y_0],...,[x_n,y_n]])"):       
         """A function to check if x is in the convex hull. 
             If x is in the convex hull.
             If x is a list it will return True 
         #If we put in a list of x,y values this is still possible 
         # Returns true if all of the the points are in the convexhull."""
         if  np.shape(np.array(x))!=(2,):
-            X = [self.checker(x[i]) for i in range(len(x))]
+            X = [self.__call__(x[i]) for i in range(len(x))]
             if X==True:
                 return(True)
             else:
@@ -179,14 +181,14 @@ class convexhull:
 
 
     
-points = [[0.05, 0.02], [0.1, 0.2],[1,1]]
+#points = [[0.05, 0.02], [0.1, 0.2],[1,1]]
 
 #x = [points[i][0] for i in range(len(points))]
 #y = [points[i][1] for i in range(len(points))]
 #plt.plot(x,y ,"o")
-a = convexhull(points)
-a.plot()
-print(a.checker([[0.7,0.2],[0.9,-0.1],[1.3,0]]))
-print(a.checker([0,0]))
+#a = convexhull(points)
+#a.plot()
+#print(a([[0.7,0.2],[0.9,-0.1],[1.3,0]]))
+#print(a([0,0]))
 
 
