@@ -97,7 +97,7 @@ class convexhull:
             if pj == None:
                 break
         # Connection the dots.
-        if lower[-1][0]==upper[-1][0] and lower[-1][1]==upper[-1][1]:
+        if lower[-1][0]==upper[-1][0] and lower[-1][1]!=upper[-1][1]:
             lower.append(upper[-1])
         self.lower = lower
         
@@ -180,13 +180,16 @@ class convexhull:
 
 
     
-#points= [[0,0],[0,-4],[0,1],[1,0.3],[1,-3],[3,0],[2,3],[3,2],[5,5],[5,3],[5,-2],[5,0]]
+points = [[0.05, 0.02], [0.1, 0.2],
+       [0.2, -0.1], [0.3, 0],
+       [0.4, 0.1], [0.7, 0.2]]
+
 #x = [points[i][0] for i in range(len(points))]
 #y = [points[i][1] for i in range(len(points))]
 #plt.plot(x,y ,"o")
-#a = convexhull(points)
+a = convexhull(points)
 #a.plot()
-#print(a.checker([[0,0],[0,4],[0,1]]))
-#print(a.checker([0,0]))
+print(a.checker([[0.7,0.2],[0.9,-0.1],[1.3,0]]))
+print(a.checker([0,0]))
 
 
