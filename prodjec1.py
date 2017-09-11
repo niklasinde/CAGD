@@ -97,25 +97,24 @@ class convexhull:
             if pj == None:
                 break
         # Connection the dots.
-        if lower[-1][0]==upper[-1][0]:
+        if lower[-1][0]==upper[-1][0] and lower[-1][1]==upper[-1][1]:
             lower.append(upper[-1])
         self.lower = lower
         
     def checker(self,x):
-        """ In put is list or a single point with form [x,y] or [[x_0,y_o],[x_1,y_1],[x_2,y_2]...[x_n,y_n]]"""
+        """ Input is list or a single point with form [x,y] or [[x_0,y_0],[x_1,y_1],[x_2,y_2]...[x_n,y_n]]"""
         
         # If we put in a list of x,y values this is still possible 
         # Returns true if all of the the points are in the convexhull.
         if  np.shape(np.array(x))!=(2,):
             x = [self.checker(x[i]) for i in range(len(x))]
-            if (x==True):
+            if x==True:
                 return(True)
             else:
                 print(x)
                 return(False)
         low = self.lower
         up = self.upper
-        
         
         
         if not self.upper[0][0] <= x[0] <= self.upper[-1][0]:
@@ -144,7 +143,7 @@ class convexhull:
                 if low[i][0] <= x[0] <= low[i+1][0]:
 
                     low_index = i 
-
+            
             # calculate the function of the line between the two dots which are found in the function above.
             klower =(low[low_index][1]-low[low_index+1][1])/(low[low_index][0]-low[low_index+1][0])
             kupper =(up[up_index][1]-up[up_index+1][1])/(up[up_index][0]-up[up_index+1][0])
@@ -157,31 +156,37 @@ class convexhull:
                 return(False)
         
     def plot(self):
+        low = self.lower
+        up = self.upper
+        points = self.points
         x = [points[i][0] for i in range(len(points))]
         y = [points[i][1] for i in range(len(points))]
         plt.plot(x,y ,"o")
-        for i in range(len(self.upper)-1):
-            x1,x2,y1,y2 = self.upper[i][0],self.upper[i+1][0],self.upper[i][1],self.upper[i+1][1]
-    
-            plt.plot((x1,x2),(y1,y2),'-',color="red")
+        
+        x1,x2,y1,y2 = up[0][0],up[1][0],up[0][1],up[1][1]
+        upline, = plt.plot((x1,x2),(y1,y2),'-',label="Upper Limit",color="red")
+        for i in range(1,len(up)-1):
+            x1,x2,y1,y2 = up[i][0],up[i+1][0],up[i][1],up[i+1][1]
+            upline, = plt.plot((x1,x2),(y1,y2),'-',color="red")
 
-        for i in range(len(self.lower)-1):
-            x1,x2,y1,y2 = self.lower[i][0],self.lower[i+1][0],self.lower[i][1],self.lower[i+1][1]
-    
-            plt.plot((x1,x2),(y1,y2),'-',color="green")
-            
-        plt.title("Red is the upper boundry and green is the lower boundry of the compley hull")
+        x1,x2,y1,y2 = low[0][0],low[1][0],low[0][1],low[1][1]
+        lowline, = plt.plot((x1,x2),(y1,y2),'-',label="Lower Limit",color="green")
+        for i in range(1,len(low)-1):
+            x1,x2,y1,y2 = low[i][0],low[i+1][0],low[i][1],low[i+1][1]
+            lowline, = plt.plot((x1,x2),(y1,y2),'-',color="green")
+        plt.legend()
+        plt.title("Convex hull of given points.")
         plt.show()
 
 
     
-points= [[0,0],[0,-4],[0,1],[1,1],[1,-3],[3,0],[2,2],[3,2],[5,5],[5,3],[5,-2],[5,0]]
-x = [points[i][0] for i in range(len(points))]
-y = [points[i][1] for i in range(len(points))]
-plt.plot(x,y ,"o")
-a = convexhull(points)
-a.plot()
-print(a.checker([[0,0],[0,4],[0,1]]))
-print(a.checker([0,0]))
+#points= [[0,0],[0,-4],[0,1],[1,0.3],[1,-3],[3,0],[2,3],[3,2],[5,5],[5,3],[5,-2],[5,0]]
+#x = [points[i][0] for i in range(len(points))]
+#y = [points[i][1] for i in range(len(points))]
+#plt.plot(x,y ,"o")
+#a = convexhull(points)
+#a.plot()
+#print(a.checker([[0,0],[0,4],[0,1]]))
+#print(a.checker([0,0]))
 
-print(a.upper)
+
