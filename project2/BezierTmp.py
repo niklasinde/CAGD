@@ -25,6 +25,8 @@ class BernBasis:
         return binom(self.n, self.i)*var(arg)
 
 class RecurBasis:
+    '''Used for task 3, to mimic the
+       computation of homework 1.'''
     def __init__(self, pts):
         self.pts, self.n = pts, len(pts)-1
         self.Bezier = self._generateCurve()
@@ -59,13 +61,16 @@ class BernPoly:
         return lambda x: sum(self.pts[i]*base(x)
                              for i, base in enumerate(self.basis))
 
-    def _render(self, nsp=100, colour='r', env=None) -> 'None':
-        values = array(list(self.px(x) for x in linspace(0, 1, nsp)))
+    def _render(self, domain=[0,1], nsp=100, colour='r', env=None) -> 'None':
+        sample = linspace(domain[0], domain[1], nsp)
+        u = lambda a: a
+        values = array(list(self.px(u(x))
+                       for x in linspace(0, 1, nsp)))
 
-        plot(values[:, 0], values[:, 1], c=colour)
+        plot(sample, values[:, 1], c=colour)
 
         if env:
-            scatter(self.pts[:, 0], x[:, 1], c='k', alpha=0.5)
+            scatter(self.pts[:, 0], self.pts[:, 1], c='k', alpha=0.5)
             plot(list([self.pts[i, 0], self.pts[i+1, 0]] for i in range(self.n)),
                  list([self.pts[i, 1], self.pts[i+1, 1]] for i in range(self.n)),
                  c='k', alpha=0.2)
@@ -94,22 +99,24 @@ x = array([[0,0], [0.2, 0.5], [0.4, 0.2], [0.7, -0.2], [1, 0.1]])
 pts = array([ [0.05, 0.02], [0.1, 0.2],
               [0.2, -0.1], [0.3, 0],
               [0.4, 0.1], [0.7, 0.2]])
-@timeit
-def RecursiveMethod():
-    proj1 = RecurBasis(pts)
-    proj1._render()
-@timeit
-def BernsteinMethod():
-    proj2 = BernPoly(pts)
-    proj2._render()
+#@timeit
+#def RecursiveMethod():
+#    proj1 = RecurBasis(pts)
+#    proj1._render()
+#@timeit
+#def BernsteinMethod():
+#    proj2 = BernPoly(pts)
+#    proj2._render()
 
-RecursiveMethod()
-BernsteinMethod()
+#RecursiveMethod()
+#BernsteinMethod()
 
 '''task3'''
+A = BernPoly(pts)
+A._render(domain=[0,1], env=True)
 
-#xlim(-0.2, 1.4)
-#ylim(-0.2, 0.4)
-#grid()
+xlim(-0.2, 1.4)
+ylim(-0.2, 0.4)
+grid()
 #savefig('basisfuncs.pdf')
-#show()
+show()
