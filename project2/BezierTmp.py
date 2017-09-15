@@ -34,6 +34,14 @@ class RecurBasis:
        computation of homework 1.'''
     def __init__(self, pts):
         self.pts, self.n = pts, len(pts)-1
+        self.pts2 = self.pts.copy()
+        print(self.pts)
+        for k in range(self.n + 1):
+            tmp = self.domaintransform(self.pts[k, 0])
+            print(tmp)
+            self.pts[k, 0] = tmp
+            print(self.pts[k, 0])
+        print(self.pts)
         self.b = self.__getCurve()
 
     def __getCurve(self) -> 'func':
@@ -42,6 +50,16 @@ class RecurBasis:
             else: return lambda t: (1-t)*b(i, k-1)(t) + t*b(i+1, k-1)(t)
 
         return b(0, self.n)
+
+    def domaintransform(self, pt):
+        a = (pt - min(self.pts2[:, 0]))
+        b = (max(self.pts2[:, 0]) - min(self.pts2[:, 0]))
+        return a/b
+
+    def Backwardsdomaintransform(self, pt):
+        return ((max(self.pts[:, 0]) - min(self.pts[:, 0]))/
+                (pt - min(self.pts[:, 0])))
+
 
     def subdivision(self, t=0.5):
         def b(i, k):
@@ -57,9 +75,9 @@ class RecurBasis:
         scatter(pts2[:, 0], pts2[:, 1], c='b')
 
         A1 = BernPoly(pts1)
-        A1.render([0,t], colour = 'r')
+        A1.render([-1,t], colour = 'r')
         A2 = BernPoly(pts2)
-        A2.render([t, 1], colour = 'b')
+        A2.render([t, 2], colour = 'b')
 
     def render(self, nsp=100, colour='r', env=None) -> 'None':
         values = array(list(self.b(x) for x in linspace(0, 1, nsp)))
@@ -140,14 +158,14 @@ if __name__=='__main__':
     #RecursiveMethod()
     #BernsteinMethod()
     '''task3'''
-    pts = array([[0, 0], [0.25, 0.5], [0.75, 0.5], [1, 0]])
+    pts = array([[-1, 0], [0, 1], [1, -2], [2, 0]])
     B = BernPoly(pts)
-    B.render(domain=[0,1], env=True)
+    B.render(domain=[-1,2], env=True)
     A = RecurBasis(pts)
-    A.subdivision()
+    A.subdivision(t=0.4)
 
     #xlim(-0.2, 1.4)
     #ylim(-0.2, 0.4)
     grid()
-    savefig('SubDivision.pdf')
+    #savefig('SubDivision.pdf')
     show()
