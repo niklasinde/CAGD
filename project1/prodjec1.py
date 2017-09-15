@@ -74,8 +74,6 @@ class convexhull:
     def _loader(self):
         """ function to calculate the upper and lower points of the cunvex hull """
         points = sorted(self.points)
-        
-        
         upper,lower = [points[0]],[points[0]]
         ptsu,ptsl  = points[1:],points[1:]
         
@@ -86,8 +84,6 @@ class convexhull:
             else:
                 upper.append(pi)
         self.upper = upper
-        
-        
         while True:
             pj , ptsl = self._lowerpoints(lower[-1],ptsl)
 
