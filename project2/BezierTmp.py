@@ -60,8 +60,6 @@ class BernPoly:
         self.pts, self.n = pts, len(pts) - 1
         self.basis = self._generateBasis()
         self.px    = self._generatePolynomial()
-           
-        #
         self.domain = [pts[0][0],pts[-1][0]]
 
     def __call__(self, x) -> 'matrix':
@@ -72,7 +70,7 @@ class BernPoly:
         return lambda x: sum(self.pts[i]*base(x)
                              for i, base in enumerate(self.basis))
 
-    def _render(self, nsp=100, color='r', env=None) -> 'None':
+    def _render(self, nsp=100, color='r', env=True) -> 'None':
         domain = self.domain
         print(domain[0])
         sample = linspace(domain[0], domain[1], nsp)
@@ -223,12 +221,12 @@ def task3(save=False):
 '''Task4'''
 #def task4():
 Bern1 = BernPoly(pts)
-
+Bern1._render()
 split = 0.5
 a = Subdiv(Bern1,split)
 a._render(env=True)
 bern1,bern2 = a()
-print(bern1.pts,"\n",bern2.pts)
+#print(bern1.pts,"\n",bern2.pts)
 #show()
 
 #Bern2._render()
