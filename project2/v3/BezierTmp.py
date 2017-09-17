@@ -57,13 +57,11 @@ class RecurBasis:
         return b(s, v)
 
     def inside(self, other:'obj'):
-        X = list(self.domain).copy(); [X.append(x) for x in other.domain]
+        X   = list(self.domain).copy(); [X.append(x) for x in other.domain]
         tmp = X.copy(); tmp.sort()
 
-        Y = list(self.ydomain).copy(); [Y.append(y) for y in other.ydomain]
+        Y    = list(self.ydomain).copy(); [Y.append(y) for y in other.ydomain]
         tmpy = Y.copy(); tmpy.sort()
-        #print(Y)
-        #print(tmpy)
 
         d = 0.2
         plot(X[0:2], [Y[0], Y[0]], c='k', alpha=d)
@@ -76,16 +74,20 @@ class RecurBasis:
             self.render(env=False)
             raise Exception
 
-        def checkboundary(A, B):
+        def checkBoundary(A, B):
             for a in A:
-                if a in set(B): return True
-            else: return False
+                if a in set(B): print('in'); return True
+            else: print('out'); return False
 
-        if ((not tmp[0:2] == X[0:2] or not tmp[0:2] == X[2:4])
-            or checkboundary(self.domain, other.domain)):
+        def checkInside(A, B):
+            C = (not A[0:2] == B[0:2] or not A[0:2] == B[2:4])
+            print(C)
+            return C
 
-            if ((not tmpy[0:2] == Y[0:2] or not tmpy[0:2] == Y[2:4])
-                or checkboundary(self.ydomain, other.ydomain)):
+        if checkBoundary(self.domain, other.domain) or checkInside(tmp, X):
+
+            if (checkBoundary(self.ydomain, other.ydomain)
+                or checkInside(tmpy, Y)):
 
                 return True
 
@@ -119,7 +121,7 @@ class RecurBasis:
                     #break
                     raise Exception
 
-        self.inside(other)
+        self.inside(other) #Temporary
         try:
             Loop(self)
         except Exception:
@@ -238,6 +240,6 @@ if __name__=='__main__':
 
     #xlim(-0.2, 1.4)
     #ylim(-0.2, 0.4)
-    grid()
+    #grid()
     #savefig('SubDivision2.pdf')
     show()
