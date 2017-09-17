@@ -3,6 +3,14 @@ from scipy.special import binom
 from matplotlib.pyplot import *
 from functools import reduce
 import time
+import contextlib
+
+@contextlib.contextmanager
+def ignored(*exceptions):
+    try:
+        yield
+    except exceptions:
+        pass
 
 def timeit(method):
     def timed(*args, **kw):
@@ -31,8 +39,6 @@ class BernBasis:
 
 
 class RecurBasis:
-    '''Used for task 3, to mimic the
-       computation of homework 1.'''
     def __init__(self, pts):
         self.pts, self.n = pts, len(pts)-1
         self.b = self.__getCurve(0, self.n)
@@ -63,26 +69,28 @@ class RecurBasis:
         Y    = list(self.ydomain).copy(); [Y.append(y) for y in other.ydomain]
         tmpy = Y.copy(); tmpy.sort()
 
+        ### PLOTS THE RECTANGLES ###
         d = 0.2
         plot(X[0:2], [Y[0], Y[0]], c='k', alpha=d)
         plot(X[0:2], [Y[1], Y[1]], c='k', alpha=d)
         plot([X[0], X[0]], Y[0:2], c='k', alpha=d)
         plot([X[1], X[1]], Y[0:2], c='k', alpha=d)
+        ### ###
 
-        if abs(X[0] - X[1]) <= 0.01:
+        ### BREAK CONDITION ###
+        if abs(X[0] - X[1]) <= 0.05:
             scatter(self.domain[0], self.ydomain[0], c='r')
             self.render(env=False)
             raise Exception
+        ### ###
 
         def checkBoundary(A, B):
             for a in A:
-                if a in set(B): print('in'); return True
-            else: print('out'); return False
+                if a in set(B): return True
+            else: return False
 
         def checkInside(A, B):
-            C = (not A[0:2] == B[0:2] or not A[0:2] == B[2:4])
-            print(C)
-            return C
+            return not (A[0:2] == B[0:2] or A[0:2] == B[2:4])
 
         if checkBoundary(self.domain, other.domain) or checkInside(tmp, X):
 
@@ -94,12 +102,10 @@ class RecurBasis:
             else: return False
         else: return False
 
-
     def intersections(self, other:'obj'):
+
         def evaluateDivision(obj):
             t = abs(obj.domain[0] - obj.domain[1])/2
-            s = obj.b(t)
-            scatter(s[0], s[1])
             B1, B2 = obj.subdivision(t)
 
             if B1.inside(other):
@@ -117,15 +123,14 @@ class RecurBasis:
                 try:
                     Loop(A)
                 except Exception:
-                    #A.render(env=False)
-                    #break
-                    raise Exception
+                    break
+
+        with ignored(Exception):
+            Loop(self)
 
         self.inside(other) #Temporary
-        try:
-            Loop(self)
-        except Exception:
-            pass
+        xlim(-10, 10)
+        ylim(-10, 10)
 
     def subdivision(self, t=0.5) -> 'obj, obj':
         pts1 = array(list(reversed(list(self.__getCurve(0, tmp)(t)
