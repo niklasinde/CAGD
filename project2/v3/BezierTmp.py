@@ -103,19 +103,20 @@ class RecurBasis:
         else: return False
 
     def intersections(self, other:'obj'):
+        self.other = other
 
-        def evaluateDivision(obj):
-            t = abs(obj.domain[0] - obj.domain[1])/2
-            B1, B2 = obj.subdivision(t)
+        def getSubDivision(obj):
+            return obj.subdivision(t = abs(obj.domain[0] - obj.domain[1])/2)
 
-            if B1.inside(other):
-                if B2.inside(other): return B1, B2
-                else: return B1
-            elif B2.inside(other): return B2
+        def performTrivialReject(A, B):
+            if A.inside(self.other):
+                if B.inside(self.other): return A, B
+                else: return A
+            elif B.inside(self.other): return B
             else: raise Exception
 
         def wrapper(X):
-            tmp = evaluateDivision(X)
+            tmp = performTrivialReject(*getSubDivision(X))
             return iter(tmp) if shape(tmp) != () else [tmp]
 
         def Loop(X):
@@ -124,7 +125,9 @@ class RecurBasis:
                     Loop(A)
                 except Exception:
                     break
-        self.inside(other) #Temporary
+
+        self.inside(self.other) #Temporary
+
         with ignored(Exception):
             Loop(self)
 
@@ -137,9 +140,7 @@ class RecurBasis:
         pts2 = array(list(self.__getCurve(self.n - tmp, tmp)(t)
                      for tmp in reversed(range(self.n+1))))
 
-        A1 = RecurBasis(pts1)
-        A2 = RecurBasis(pts2)
-        return A1, A2
+        return RecurBasis(pts1), RecurBasis(pts2)
 
     def render(self, nsp=100, colour='r', env=True) -> 'None':
         domain = self.domain
