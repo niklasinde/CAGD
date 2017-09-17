@@ -124,11 +124,10 @@ class RecurBasis:
                     Loop(A)
                 except Exception:
                     break
-
+        self.inside(other) #Temporary
         with ignored(Exception):
             Loop(self)
 
-        self.inside(other) #Temporary
         xlim(-10, 10)
         ylim(-10, 10)
 
@@ -154,7 +153,7 @@ class RecurBasis:
             LineSegment = lambda i, j: [self.pts[i, j], self.pts[i+1, j]]
             scatter(self.pts[:, 0], self.pts[:, 1], c='k', alpha=0.5)
             plot(list(LineSegment(i, 0) for i in range(self.n)),
-                 list(eLineSegment(i, 1) for i in range(self.n)),
+                 list(LineSegment(i, 1) for i in range(self.n)),
                  c='k', alpha=0.2)
 
 
