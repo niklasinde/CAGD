@@ -37,10 +37,18 @@ class RecurBasis:
         self.pts, self.n = pts, len(pts)-1
         self.b = self.__getCurve(0, self.n)
         self.domain = [min(self.pts[:, 0]), max(self.pts[:, 0])]
+        self.ydomain = [min(self.pts[:, 1]), max(self.pts[:, 1])]
 
     def __getCurve(self, s, v) -> 'func':
-        c1 = lambda t: (self.domain[1] - t)/(self.domain[1] - self.domain[0])
-        c2 = lambda t: (t - self.domain[0])/(self.domain[1] - self.domain[0])
+        def c1(t):
+            a = self.domain[1] - t
+            b = self.domain[1] - self.domain[0]
+            return a/b if abs(b) > 0.01 else 0
+
+        def c2(t):
+            a = t - self.domain[0]
+            b = self.domain[1] - self.domain[0]
+            return a/b if abs(b) > 0.01 else 0
 
         def b(i, k):
             if k == 0: return lambda _: self.pts[i, :]
@@ -48,20 +56,74 @@ class RecurBasis:
 
         return b(s, v)
 
-    def intersections(self, other:'obj', nsp=100):
-        values = array(list(other.b(x)
-                            for x in linspace(other.domain[0],
-                                              other.domain[1], nsp)))
-        xaxis = values[:, 0]
-        print(xaxis)
-        yaxis = values[:, 1]
+    def inside(self, other:'obj'):
+        X = list(self.domain).copy(); [X.append(x) for x in other.domain]
+        tmp = X.copy(); tmp.sort()
 
-        tmp = array(list(self.b(x) for x in xaxis))
-        xtmp = tmp[:, 0]
-        ytmp = tmp[:, 1]
-        for i in range(len(tmp)):
-            if abs(yaxis[i] - ytmp[i]) < 0.1:
-                scatter(xaxis[i], yaxis[i])
+        Y = list(self.ydomain).copy(); [Y.append(y) for y in other.ydomain]
+        tmpy = Y.copy(); tmpy.sort()
+        #print(Y)
+        #print(tmpy)
+
+        d = 0.2
+        plot(X[0:2], [Y[0], Y[0]], c='k', alpha=d)
+        plot(X[0:2], [Y[1], Y[1]], c='k', alpha=d)
+        plot([X[0], X[0]], Y[0:2], c='k', alpha=d)
+        plot([X[1], X[1]], Y[0:2], c='k', alpha=d)
+
+        if abs(X[0] - X[1]) <= 0.01:
+            scatter(self.domain[0], self.ydomain[0], c='r')
+            self.render(env=False)
+            raise Exception
+
+        def checkboundary(A, B):
+            for a in A:
+                if a in set(B): return True
+            else: return False
+
+        if ((not tmp[0:2] == X[0:2] or not tmp[0:2] == X[2:4])
+            or checkboundary(self.domain, other.domain)):
+
+            if ((not tmpy[0:2] == Y[0:2] or not tmpy[0:2] == Y[2:4])
+                or checkboundary(self.ydomain, other.ydomain)):
+
+                return True
+
+            else: return False
+        else: return False
+
+
+    def intersections(self, other:'obj'):
+        def evaluateDivision(obj):
+            t = abs(obj.domain[0] - obj.domain[1])/2
+            s = obj.b(t)
+            scatter(s[0], s[1])
+            B1, B2 = obj.subdivision(t)
+
+            if B1.inside(other):
+                if B2.inside(other): return B1, B2
+                else: return B1
+            elif B2.inside(other): return B2
+            else: raise Exception
+
+        def wrapper(X):
+            tmp = evaluateDivision(X)
+            return iter(tmp) if shape(tmp) != () else [tmp]
+
+        def Loop(X):
+            for A in wrapper(X):
+                try:
+                    Loop(A)
+                except Exception:
+                    #A.render(env=False)
+                    #break
+                    raise Exception
+
+        self.inside(other)
+        try:
+            Loop(self)
+        except Exception:
+            pass
 
     def subdivision(self, t=0.5) -> 'obj, obj':
         pts1 = array(list(reversed(list(self.__getCurve(0, tmp)(t)
@@ -78,14 +140,14 @@ class RecurBasis:
         values = array(list(self.b(x)
                             for x in linspace(domain[0], domain[1], nsp)))
 
-        plot(values[:, 0], values[:, 1], c=colour)
+        plot(values[:, 0], values[:, 1])#, c=colour)
 
         if env:
             print('env active')
             LineSegment = lambda i, j: [self.pts[i, j], self.pts[i+1, j]]
             scatter(self.pts[:, 0], self.pts[:, 1], c='k', alpha=0.5)
             plot(list(LineSegment(i, 0) for i in range(self.n)),
-                 list(LineSegment(i, 1) for i in range(self.n)),
+                 list(eLineSegment(i, 1) for i in range(self.n)),
                  c='k', alpha=0.2)
 
 
@@ -111,7 +173,7 @@ class BernPoly:
         values = array(list(self.B(u(x))
                        for x in linspace(0, 1, nsp)))
 
-        plot(sample, values[:, 1], c=colour, alpha=0.5)
+        plot(sample, values[:, 1], alpha=0.5) #,c=colour
 
         if env:
             LineSegment = lambda i, j: [self.pts[i, j], self.pts[i+1, j]]
@@ -170,12 +232,12 @@ if __name__=='__main__':
     linepts = array([[4,5], [6, -4]])
     A = RecurBasis(pts)
     L = RecurBasis(linepts)
-    A.render()
-    L.render()
+    A.render(colour = 'r', env=False)
+    L.render(colour = 'r', env=False)
     A.intersections(L)
 
     #xlim(-0.2, 1.4)
     #ylim(-0.2, 0.4)
     grid()
-    savefig('SubDivision2.pdf')
+    #savefig('SubDivision2.pdf')
     show()
