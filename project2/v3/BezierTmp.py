@@ -2,6 +2,7 @@ from numpy import *
 from scipy.special import binom
 from matplotlib.pyplot import *
 from functools import reduce
+from TrivialReject import rectangle
 import time
 import contextlib
 
@@ -41,8 +42,8 @@ class BernBasis:
 class RecurBasis:
     def __init__(self, pts):
         self.pts, self.n = pts, len(pts)-1
-        self.b = self.__getCurve(0, self.n)
-        self.domain = [min(self.pts[:, 0]), max(self.pts[:, 0])]
+        self.b       = self.__getCurve(0, self.n)
+        self.domain  = [min(self.pts[:, 0]), max(self.pts[:, 0])]
         self.ydomain = [min(self.pts[:, 1]), max(self.pts[:, 1])]
 
     def __getCurve(self, s, v) -> 'func':
@@ -77,7 +78,7 @@ class RecurBasis:
         plot([X[1], X[1]], Y[0:2], c='k', alpha=d)
         ### ###
 
-        ### BREAK CONDITION ###
+        ### BREAK-CONDITION ###
         if abs(X[0] - X[1]) <= 0.05:
             scatter(self.domain[0], self.ydomain[0], c='r')
             self.render(env=False)
@@ -103,16 +104,19 @@ class RecurBasis:
         else: return False
 
     def intersections(self, other:'obj'):
-        self.other = other
+        self.other1 = other
+        self.other = rectangle(self.other1.domain, self.other1.ydomain)
 
         def getSubDivision(obj):
             return obj.subdivision(t = abs(obj.domain[0] - obj.domain[1])/2)
 
         def performTrivialReject(A, B):
-            if A.inside(self.other):
-                if B.inside(self.other): return A, B
+            a = rectangle(A.domain, A.ydomain)
+            b = rectangle(B.domain, B.ydomain)
+            if a.control(self.other):
+                if b.control(self.other): return A, B
                 else: return A
-            elif B.inside(self.other): return B
+            elif a.control(self.other): return B
             else: raise Exception
 
         def wrapper(X):
@@ -126,10 +130,13 @@ class RecurBasis:
                 except Exception:
                     break
 
-        self.inside(self.other) #Temporary
+        #self.inside(self.other) #Temporary
 
         with ignored(Exception):
             Loop(self)
+
+        #self.inside(self.other) #Temporary
+
 
         xlim(-10, 10)
         ylim(-10, 10)
@@ -176,11 +183,10 @@ class BernPoly:
 
     def render(self, domain=[0,1], nsp=100, colour='r', env=None) -> 'None':
         sample = linspace(domain[0], domain[1], nsp)
-        u = lambda a: a
         values = array(list(self.B(u(x))
                        for x in linspace(0, 1, nsp)))
 
-        plot(sample, values[:, 1], alpha=0.5) #,c=colour
+        plot(values[: 0], values[:, 1], alpha=0.5, c=colour)
 
         if env:
             LineSegment = lambda i, j: [self.pts[i, j], self.pts[i+1, j]]
@@ -202,18 +208,18 @@ class BernPoly:
 
 
 if __name__=='__main__':
-    x = array([[0,0],
-               [0.2, 0.5],
-               [0.4, 0.2],
-               [0.7, -0.2],
-               [1, 0.1]])
+    #x = array([[0,0],
+    #           [0.2, 0.5],
+    #           [0.4, 0.2],
+    #           [0.7, -0.2],
+    #           [1, 0.1]])
     '''task1'''
     #P = BernPoly(x)
     #P.renderBasisFuncs(0.2)
     '''task2'''
-    pts3 = array([[0.05, 0.02], [0.1, 0.2],
-                 [0.2, -0.1], [0.3, 0],
-                 [0.4, 0.1], [0.7, 0.2]])
+    #pts3 = array([[0.05, 0.02], [0.1, 0.2],
+    #             [0.2, -0.1], [0.3, 0],
+    #             [0.4, 0.1], [0.7, 0.2]])
     #@timeit
     #def RecursiveMethod():
     #    proj1 = RecurBasis(pts)
@@ -235,16 +241,18 @@ if __name__=='__main__':
     #A.render()
     #A.subdivision(t=0.6)
     '''task4'''
-    pts = array([[0,0], [9, -4], [7, 5], [2, -4]])
-    linepts = array([[4,5], [6, -4]])
+    #pts = array([[0,0], [9, -4], [7, 5], [2, -4]])
+    #linepts = array([[4,5], [6, -4]])
+    pts = array([[0,0], [0.25, 0.75], [0.5, 1], [0.75, 0.75], [1, 0]])
+    linepts = array([[-0.1, 0.51], [1.1, 0.5]])
     A = RecurBasis(pts)
     L = RecurBasis(linepts)
     A.render(colour = 'r', env=False)
     L.render(colour = 'r', env=False)
     A.intersections(L)
 
-    #xlim(-0.2, 1.4)
-    #ylim(-0.2, 0.4)
+    xlim(-0.2, 1.4)
+    ylim(-0.2, 1.4)
     #grid()
     #savefig('SubDivision2.pdf')
     show()
