@@ -35,18 +35,31 @@ class RecurBasis:
     def __init__(self, pts):
         self.pts, self.n = pts, len(pts)-1
         self.pts2 = self.pts.copy()
+        print(self.pts)
+        for k in range(self.n + 1):
+            tmp = self.domaintransform(self.pts[k, 0])
+            print(tmp)
+            self.pts[k, 0] = tmp
+            print(self.pts[k, 0])
+        print(self.pts)
         self.b = self.__getCurve()
-        self.domain = [min(self.pts[:, 0]), max(self.pts[:, 0])]
 
     def __getCurve(self) -> 'func':
-        c1 = lambda t: (max(self.pts2[:, 0]) - t)/(max(self.pts2[:, 0]))
-        c2 = lambda t: ((t - min(self.pts2[:, 0]))/(max(self.pts2[:, 0]) -
-                                                  min(self.pts2[:, 0])))
         def b(i, k):
             if k == 0: return lambda _: self.pts[i, :]
-            else: return lambda t: c1(t)*b(i, k-1)(t) + c2(t)*b(i+1, k-1)(t)
+            else: return lambda t: (1-t)*b(i, k-1)(t) + t*b(i+1, k-1)(t)
 
         return b(0, self.n)
+
+    def domaintransform(self, pt):
+        a = (pt - min(self.pts2[:, 0]))
+        b = (max(self.pts2[:, 0]) - min(self.pts2[:, 0]))
+        return a/b
+
+    def Backwardsdomaintransform(self, pt):
+        return ((max(self.pts[:, 0]) - min(self.pts[:, 0]))/
+                (pt - min(self.pts[:, 0])))
+
 
     def subdivision(self, t=0.5):
         def b(i, k):
@@ -61,23 +74,18 @@ class RecurBasis:
         scatter(pts1[:, 0], pts1[:, 1], c='r')
         scatter(pts2[:, 0], pts2[:, 1], c='b')
 
-        A1 = RecurBasis(pts1)
-        A1.render(colour = 'r')
-        A2 = RecurBasis(pts2)
-        A2.render(colour = 'b')
+        A1 = BernPoly(pts1)
+        A1.render([-1,t], colour = 'r')
+        A2 = BernPoly(pts2)
+        A2.render([t, 2], colour = 'b')
 
-    def render(self, nsp=100, colour='r', env=False) -> 'None':
-        domain = self.domain
-        print(domain)
-        values = array(list(self.b(x)
-                            for x in linspace(domain[0], domain[1], nsp)))
+    def render(self, nsp=100, colour='r', env=None) -> 'None':
+        values = array(list(self.b(x) for x in linspace(0, 1, nsp)))
 
         plot(values[:, 0], values[:, 1], c=colour)
-        #xlim(-1.5, 2)
         if env:
-            print('env active')
-            LineSegment = lambda i, j: [self.pts2[i, j], self.pts2[i+1, j]]
-            scatter(self.pts2[:, 0], self.pts2[:, 1], c='k', alpha=0.5)
+            LineSegment = lambda i, j: [self.pts[i, j], self.pts[i+1, j]]
+            scatter(self.pts[:, 0], x[:, 1], c='k', alpha=0.5)
             plot(list(LineSegment[i, 0] for i in range(self.n)),
                  list(LineSegment[i, 1] for i in range(self.n)),
                  c='k', alpha=0.2)
@@ -151,11 +159,10 @@ if __name__=='__main__':
     #BernsteinMethod()
     '''task3'''
     pts = array([[-1, 0], [0, 1], [1, -2], [2, 0]])
-    #B = BernPoly(pts)
-    #B.render(domain=[-1,2], env=True)
+    B = BernPoly(pts)
+    B.render(domain=[-1,2], env=True)
     A = RecurBasis(pts)
-    A.render(env=True)
-#    A.subdivision(t=0.4)
+    A.subdivision(t=0.4)
 
     #xlim(-0.2, 1.4)
     #ylim(-0.2, 0.4)
