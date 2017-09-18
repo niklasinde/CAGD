@@ -74,7 +74,7 @@ class convexhull:
     def _loader(self):
         """ function to calculate the upper and lower points of the cunvex hull """
         if type(self.points)== np.ndarray:
-            print("yes")
+#            print("yes")
             self.points = self.points.tolist()
         points = sorted(self.points)
         
@@ -124,7 +124,7 @@ class convexhull:
         up = self.upper
         
         if not self.lower[0][0] <= x[0] <= self.lower[-1][0]:
-            print(1)
+#            print(1)
             return False
         
         
@@ -137,11 +137,11 @@ class convexhull:
                 return(False)
                 
                 
-        elif  x[0] == low[-1][0] and low[-1][0]==[-2][0]:
+        elif  x[0] == low[-1][0] and low[-1][0]==low[-2][0]:
             if low[-2][1]<= x[1] <= low[-1][1]:
                 return(True)
             else:
-                print(2)
+#                print(2)
                 return(False)
         else:
             for i in range(len(up)-1):
@@ -153,17 +153,20 @@ class convexhull:
                 if low[i][0] <= x[0] <= low[i+1][0]:
 
                     low_index = i 
-            
+            if low[low_index][0]==low[low_index+1][0]:
+                raise ZeroDivisionError(str(low),str(x))
+            if up[up_index][0]==up[up_index+1][0]:
+                raise ZeroDivisionError(str(up)+str(x))
             # calculate the function of the line between the two dots which are found in the function above.
             klower =(low[low_index][1]-low[low_index+1][1])/(low[low_index][0]-low[low_index+1][0])
             kupper =(up[up_index][1]-up[up_index+1][1])/(up[up_index][0]-up[up_index+1][0])
             
             mlower = low[low_index][1]-klower*low[low_index][0]
             mupper = up[up_index][1]-kupper*up[up_index][0]
-            if klower*x[0]+mlower == x[1] == kupper*x[0]+mupper:
+            if klower*x[0]+mlower <= x[1] <= kupper*x[0]+mupper:
                 return(True)
             else:
-                print(3)
+#                print(3)
                 return(False)
     def area(self):
         """
@@ -174,9 +177,16 @@ class convexhull:
         y = [k[1] for k in self.points]
         return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
     def intersect(self,other):
-        x =[self(pts) for pts in other.pts]
-        if x.any() ==True: return True)
-        else: return False
+        # Other == line 
+        if other.points[0][0]==other.points[1][0]: raise ValueError("Line is vertical, this is coming soon." )
+        else:
+            k =(other.points[0][1]-other.points[1][1])/(other.points[0][0]-other.points[1][0])
+            m = other.points[0][1]-k*other.points[0][0]
+            f = lambda x: k * x + m
+            for i in range(len(self.points)-1):
+                if np.sign(f(self.points[i][0])-self.points[i][1]) != np.sign(f(self.points[i+1][0])-self.points[i+1][1]):
+                    return(True)
+            return False
         
     def render(self):
         low = self.lower
