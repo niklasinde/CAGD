@@ -69,3 +69,4 @@ class RecurBasis:
                  list(LineSegment(i, 1) for i in range(self.n)),
                  c='k', alpha=0.2)
 
+
