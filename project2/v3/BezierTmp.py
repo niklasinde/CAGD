@@ -46,69 +46,33 @@ class RecurBasis:
         self.domain  = [min(self.pts[:, 0]), max(self.pts[:, 0])]
         self.ydomain = [min(self.pts[:, 1]), max(self.pts[:, 1])]
 
-    def __getCurve(self, s, v) -> 'func':
-        def c1(t):
-            a = self.domain[1] - t
-            b = self.domain[1] - self.domain[0]
-            return a/b if abs(b) > 0.01 else 0
+    def __getCurve(self, s, v, env=False) -> 'func':
+        if env == False:
+            def c1(t, _):
+                a = self.domain[1] - t; b = self.domain[1] - self.domain[0]
+                return a/b if abs(b) > 0.01 else 0
 
-        def c2(t):
-            a = t - self.domain[0]
-            b = self.domain[1] - self.domain[0]
-            return a/b if abs(b) > 0.01 else 0
+            def c2(t, _):
+                a = t - self.domain[0]; b = self.domain[1] - self.domain[0]
+                return a/b if abs(b) > 0.01 else 0
+        else:
+            def c1(t, i):
+                return (i+1)/(self.n+1)
+            def c2(t, i):
+                return 1 - (i+1)/(self.n+1)
 
         def b(i, k):
             if k == 0: return lambda _: self.pts[i, :]
-            else: return lambda t: c1(t)*b(i, k-1)(t) + c2(t)*b(i+1, k-1)(t)
+            else: return lambda t: c1(t,i)*b(i, k-1)(t) + c2(t,i)*b(i+1, k-1)(t)
 
         return b(s, v)
-
-    def inside(self, other:'obj'):
-        X   = list(self.domain).copy(); [X.append(x) for x in other.domain]
-        tmp = X.copy(); tmp.sort()
-
-        Y    = list(self.ydomain).copy(); [Y.append(y) for y in other.ydomain]
-        tmpy = Y.copy(); tmpy.sort()
-
-        ### PLOTS THE RECTANGLES ###
-        d = 0.2
-        plot(X[0:2], [Y[0], Y[0]], c='k', alpha=d)
-        plot(X[0:2], [Y[1], Y[1]], c='k', alpha=d)
-        plot([X[0], X[0]], Y[0:2], c='k', alpha=d)
-        plot([X[1], X[1]], Y[0:2], c='k', alpha=d)
-        ### ###
-
-        ### BREAK-CONDITION ###
-        if abs(X[0] - X[1]) <= 0.05:
-            scatter(self.domain[0], self.ydomain[0], c='r')
-            self.render(env=False)
-            raise Exception
-        ### ###
-
-        def checkBoundary(A, B):
-            for a in A:
-                if a in set(B): return True
-            else: return False
-
-        def checkInside(A, B):
-            return not (A[0:2] == B[0:2] or A[0:2] == B[2:4])
-
-        if checkBoundary(self.domain, other.domain) or checkInside(tmp, X):
-
-            if (checkBoundary(self.ydomain, other.ydomain)
-                or checkInside(tmpy, Y)):
-
-                return True
-
-            else: return False
-        else: return False
 
     def intersections(self, other:'obj'):
         self.other1 = other
         self.other = rectangle(self.other1.domain, self.other1.ydomain)
 
         def getSubDivision(obj):
-            return obj.subdivision(t = abs(obj.domain[0] - obj.domain[1])/2)
+            return obj.SubDivision(t = abs(obj.domain[0] - obj.domain[1])/2)
 
         def performTrivialReject(A, B):
             a = rectangle(A.domain, A.ydomain)
@@ -120,8 +84,8 @@ class RecurBasis:
             else: raise Exception
 
         def wrapper(X):
-            tmp = performTrivialReject(*getSubDivision(X))
-            return iter(tmp) if shape(tmp) != () else [tmp]
+            out = performTrivialReject(*getSubDivision(X))
+            return iter(out) if shape(out) != () else [out]
 
         def Loop(X):
             for A in wrapper(X):
@@ -130,18 +94,10 @@ class RecurBasis:
                 except Exception:
                     break
 
-        #self.inside(self.other) #Temporary
-
         with ignored(Exception):
             Loop(self)
 
-        #self.inside(self.other) #Temporary
-
-
-        xlim(-10, 10)
-        ylim(-10, 10)
-
-    def subdivision(self, t=0.5) -> 'obj, obj':
+    def SubDivision(self, t=0.5) -> 'obj, obj':
         pts1 = array(list(reversed(list(self.__getCurve(0, tmp)(t)
                      for tmp in reversed(range(self.n+1))))))
         pts2 = array(list(self.__getCurve(self.n - tmp, tmp)(t)
@@ -149,12 +105,27 @@ class RecurBasis:
 
         return RecurBasis(pts1), RecurBasis(pts2)
 
+    def DegreeElevation(self) -> 'None':
+        tmp = [list(self.pts[0].copy())]
+        [tmp.append(x)
+         for x in list(list(self.__getCurve(i, 1, env=True)(0.5))
+                       for i in range(self.n))]
+
+        tmp.append(list(self.pts[-1].copy()))
+
+        tmp = array(tmp)
+
+        self.pts, self.n = tmp, len(tmp)-1
+        self.b       = self.__getCurve(0, self.n)
+        self.domain  = [min(self.pts[:, 0]), max(self.pts[:, 0])]
+        self.ydomain = [min(self.pts[:, 1]), max(self.pts[:, 1])]
+
     def render(self, nsp=100, colour='r', env=True) -> 'None':
         domain = self.domain
         values = array(list(self.b(x)
                             for x in linspace(domain[0], domain[1], nsp)))
 
-        plot(values[:, 0], values[:, 1])#, c=colour)
+        plot(values[:, 0], values[:, 1], c=colour)
 
         if env:
             print('env active')
@@ -239,20 +210,43 @@ if __name__=='__main__':
     #S.render()
     #A = RecurBasis(pts)
     #A.render()
-    #A.subdivision(t=0.6)
+    #A.SubDivision(t=0.6)
     '''task4'''
     #pts = array([[0,0], [9, -4], [7, 5], [2, -4]])
     #linepts = array([[4,5], [6, -4]])
-    pts = array([[0,0], [0.25, 0.75], [0.5, 1], [0.75, 0.75], [1, 0]])
-    linepts = array([[-0.1, 0.51], [1.1, 0.5]])
-    A = RecurBasis(pts)
-    L = RecurBasis(linepts)
-    A.render(colour = 'r', env=False)
-    L.render(colour = 'r', env=False)
-    A.intersections(L)
+    #pts = array([[0,0], [0.25, 0.75], [0.5, 1], [0.75, 0.75], [1, 0]])
+    #linepts = array([[-0.1, 0.51], [1.1, 0.5]])
+    #A = RecurBasis(pts)
+    #L = RecurBasis(linepts)
+    #A.render(colour = 'r', env=False)
+    #L.render(colour = 'r', env=False)
+    #A.intersections(L)
 
-    xlim(-0.2, 1.4)
-    ylim(-0.2, 1.4)
-    #grid()
-    #savefig('SubDivision2.pdf')
+    '''task6'''
+    #pts = array([[0, -0.1], [0.2, 0.4], [0.5, 0.5], [0.8, 0.3], [0.6, -0.2]])
+    pts = array([[0,0], [1,1], [2,1]])
+    A = RecurBasis(pts)
+    A.render()
+    #for _ in range(10):
+    #    if _ == 0 or _ == 5: tmp = True
+    #    else: tmp = False
+    #    A.DegreeElevation()
+    #    A.render(env=tmp,colour='k')
+
+    A.DegreeElevation()
+    A.render(colour='k')
+
+    pts2 = A.pts.copy()
+
+    pts2[2, :] = pts[1, :]
+    pts2[1, : ] = [0.2, 0]
+    scatter(pts2[:, 0], pts2[:,1])
+    print(pts2)
+    B = RecurBasis(pts2)
+    B.render(env=False)
+
+    #xlim(-0.2, 1.4)
+    #ylim(-0.2, 1.4)
+    grid()
+    #savefig('DegeeElevation3.pdf')
     show()
