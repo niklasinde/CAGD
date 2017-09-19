@@ -3,37 +3,38 @@ from matplotlib.pyplot import *
 
 class Bspline:
     def __init__(self, pts:'array(,2)', knots:'array(,1)'):
-        self.pts = pts; self.knots = knots
+        self.pts = pts; self.knots = knots; self.n = len(knots) - 1
 
-    def getBasis(self):
+    def getBasis(self, xi:'float'):
         '''Cox-de Boor formula'''
         x = self.knots.copy()
 
-        def N(i, p):
+        def N(i, p) -> 'func':
             if p == 0:
-                return lambda u: 1 if x[i] <= u and u <= x[i+1] else 0
+                return lambda u: 1 if x[i] <= xi and xi <= x[i+1] else 0
 
             else:
-                def c1(u):
-                    if abs(x[i+p] - x[i]) <= 0.001: return 0
-                    return (u - x[i])/(x[i+p] - x[i])
-                def c2(u):
-                    if abs(x[i+p+1] - x[i+1]) <= 0.001: return 0
-                    return (x[i+p+1] - u)/(x[i+p+1] - x[i+1])
+                a1 = lambda _: _ - x[i]; a2 = lambda _: x[i+p] - _
+                b1 = lambda _: x[i+p-1] - x[i]; b2 = lambda _: x[i+p] - x[i+1]
+
+                c1 = lambda u: a1(u)/b1(u) if abs(b1(u)) > 0.001 else 0
+                c2 = lambda u: a2(u)/b2(u) if abs(b2(u)) > 0.001 else 0
 
                 return lambda u: c1(u)*N(i, p-1)(u) + c2(u)*N(i+1, p-1)(u)
 
-        return N(0, len(self.knots)-2)
+        return N(0, self.n)
 
-    def renderBasis(self):
-        N = self.getBasis()
-        sample = linspace(0, 1, 100)
+    def renderBasis(self, SHOW=True) -> 'None':
+        N = [self.getBasis(pt[0]) for pt in self.pts]
+        sample = linspace(self.knots[0], self.knots[-1], 100)
 
-        plot(sample, [N(_) for _ in sample])
-        xlim(-0.1, 1.1)
-        ylim(-0.1, 1.1)
+        for b in N:
+            plot(sample, [b(_) for _ in sample])
+
+        #xlim(-0.1, 1.1)
+        #ylim(-0.1, 1.1)
         grid()
-        show()
+        if SHOW == True: show()
 
 
 
