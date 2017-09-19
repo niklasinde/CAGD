@@ -135,7 +135,7 @@ class BernPoly:
         self.A2 = BernPoly(self.pts2)
         return(self.A1,self.A2)
     def bezint(self,other):
-        threshold=0.000000000001
+        threshold=19**-10
         """
         Other == Line
         Does bbox(B1) intersect bbox(B2)?
@@ -150,10 +150,12 @@ class BernPoly:
         """
 #        other.pts2 = np.array(list(other(x) for x in linspace(self.domain[0],self.domain[1],100)))
         B1, B2 = ch.convexhull(self.pts), ch.convexhull(other.pts)
-        if B1.area() + B2.area() < threshold and B1.intersect(B2):
+        if abs(self.domain[0]-self.domain[1])<threshold and B1.intersect(B2):
             other.l.append(self)
         
         elif B1.intersect(B2): 
+#            self.render()
+#            other.plot()
             B1a,B1b = self.subdiv(self.domain[0]+(abs(self.domain[1]-self.domain[0]))/2)
             return(B1a.bezint(other), B1b.bezint(other))
         else:
@@ -165,13 +167,12 @@ class BernPoly:
             self.render()
             other.render()
             for i in B.l:
-                i.render()
-                print(i.domain)
-        
-        return(other.l)
+                scatter(i(i.domain)[0],i(i.domain)[1],color ="g")
+#                print(i.domain)
+        x = array(list(i(i.domain[0]) for i in other.l))
+        return(x)
+    
 
-
-   
         
         
         
@@ -191,13 +192,8 @@ B = BernPoly(points3)
 #a,b = A.subdiv(0.5)
 #a.render()
 #b.render()
-(A.bezintwrapp(B),"results")
-show()
-A.render()
-B.render()
-for i in B.l:
-    i.render()
-    
+A.bezintwrapp(B)
+
 #bajs = B.l
 #x = [x(x.domain[0])[0] for x in bajs]
 #y = [x(x.domain[0])[1] for x in bajs]
