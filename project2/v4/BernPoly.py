@@ -26,12 +26,10 @@ def timeit(method):
 
 class BernBasis:
     def __init__(self, domain ,degree:'int', iteration:'int'):
-        
         self.n, self.i, self.domain = degree, iteration, domain
         assert self.n >= self.i, 'passed max iter.'
         self.coeff = binom(self.n, self.i)
         self.evaluate = self.__getB()
-
 
     def __call__(self, arg:'float') -> 'float':
         return self.evaluate(arg)
@@ -54,8 +52,6 @@ class BernPoly:
         self.basis = self.__getBasis()
         self.B     = self.__getPolynomial()
         self.testlist()
-
-       
     def testlist(self):
         self.l = []
 
