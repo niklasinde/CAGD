@@ -22,7 +22,7 @@ class Bspline:
 
                 return lambda u: c1(u)*N(i, p-1)(u) + c2(u)*N(i+1, p-1)(u)
 
-        return N(0, self.n)
+        return N(0, self.n-1)
 
     def renderBasis(self, SHOW=True) -> 'None':
         N = [self.getBasis(pt[0]) for pt in self.pts]
@@ -39,4 +39,7 @@ class Bspline:
 
 
 if __name__=='__main__':
-    pass
+    controlpts = array([[-1, 0], [0.4, 0.2], [0.75, -0.2], [1,0]])
+    knots = array([0, 0.25, 0.75, 1])
+    B = Bspline(controlpts, knots)
+    B.renderBasis(SHOW = True)
