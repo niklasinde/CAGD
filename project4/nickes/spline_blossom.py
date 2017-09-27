@@ -44,12 +44,16 @@ class spline():
      
     def getrelpts(self):
         n = len(self.points)-self.k-1
-        p = [self.points[i:i+self.k+2] for i in range(n)]
+        p= [self.points[i:i+self.k+2] for i in range(n)]
         return(p)
     def movepoint(self,new_point,index_oldpoint):
         updatebasislist = [index_oldpoint]
            
-    def updatebasis(self,whatupdate,newpoints):
+    def updatebasis(self, newpoints):
+        N1,F1 = self.N,self.F
+        self.points = newpoints
+        N2,F2 = self.basicfunction()
+        
         
     def rec(self, p, i, k, xi):
         """recurrence formula for b-spline"""
