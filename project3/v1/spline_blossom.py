@@ -7,6 +7,8 @@ Created on Sat Sep  2 19:03:11 2017
 """
 import sys
 
+#plt.rcParams["figure.figsize"] = [6,3]
+
 import numpy as np
 from numpy import *
 import matplotlib as plt
@@ -21,8 +23,7 @@ import time as time
 class spline():
     """ Class to calculate a spline"""
     def __init__(self, points:"knotvector", k = 3, coeff = None):
-#        if len(points) > deg-2:
-#            raise IndexError("You dont have enough points to mach the desired polynomial degree.\n Add points or lower the degree.")
+        print(len(points),k+1)
         if len(points)<= k+1:
             raise SyntaxError("We need atleast k+1 number of points in the knotvector")
         self.k = k
@@ -34,34 +35,28 @@ class spline():
 #        self.k = deg
         self.x = sm.Symbol("x")
         self.loader()
-        self.test = False
+        self.lastx = points
     #### Loading functions ###
     """ functions that will load when a variable is called with this class"""
-
+    
     def ref(self, p):
         """creates a list with values between the x values in points
         because sympy.Symbol("x") cant select a value and we need a x-value
         in the recurrence function"""
-#        p = self.points
         xi =[p[i]+(p[i+1]-p[i])/2 for i in range(len(p)-1)]
-
-        self.e =[(p[i]+p[i+1]+p[i+2])/2 for i in range(len(p)-self.k)]
-        self.xi = xi
-#        return xi
-
-
-
+        return xi
+    def getrelpts(self):
+        n = len(self.points)-self.k-1
+        p = [self.points[i:i+self.k+2] for i in range(n)]
+        return(p)
     def rec(self, p, i, k, xi):
         """recurrence formula for b-spline"""
         # We should lambdify this function for higer speed.
-        
         if k == 1:
             if p[i] == p[i+1]:
                 return 0
-
-            if  p[i] <= xi and xi <= p[i+1]:
+            if  p[i] <= xi <= p[i+1]:
                 return 1
-
             else:
                 return 0
         else:
@@ -70,24 +65,31 @@ class spline():
                     return 0
                 else:
                     return lhs / rhs
-            u =  div((self.x-p[i]),(p[i+k-1]-p[i]))*self.rec(p,i,k-1,xi)+div((p[i+k]-self.x),(p[i+k]-p[i+1]))*self.rec(p,i+1,k-1,xi)
+            u =  (div((self.x-p[i]),(p[i+k-1]-p[i]))*self.rec(p,i,k-1,xi)+
+                  div((p[i+k]-self.x),(p[i+k]-p[i+1]))*self.rec(p,i+1,k-1,xi))
             return u
 
 
     def basicfunction(self):
         n1 = []
         f1 = []
-        for i in range(len(self.points)-self.k-1):
+        
+        p = self.getrelpts()
+        for i in range(len(p)):
             n2=[]
-            p = self.points[i:i+self.k+2]
-            xi = self.ref(p)
+            f2 = []
+            xi = self.ref(p[i])
             for j in range(self.k+1):
-                func = self.rec(p,0,self.k+1,xi[j])
+                func = self.rec(p[i],0,self.k+1,xi[j])
                 evalfunc = lambdify(self.x, func, modules=['numpy'])
                 n2.append(evalfunc)
+                f2.append(func)
+#                print(func)
             n1.append(n2)
+            f1.append(f2)
         self.N = n1
-        
+        self.F = f1
+
     def loader(self):
         ### loading function ###
         ### Call this if the points are updated ###
@@ -95,25 +97,21 @@ class spline():
 
     def basisplot(self):
         """ Plots all the basis functions """
-
         for i in range(len(self.N)):
             for j in range(len(self.N[i])):
                 if self.N[i][j]!= 0:
                     x = linspace(self.points[i+j],self.points[i+j+1],50)
                     y = self.coeff[i]*self.N[i][j](x)
                     plt.plot(x,y)
-
         plt.title("Plot of the basic functions for the splines")
         plt.show()
 
     def evalfull(self,X):
         p = self.points
         if np.shape(np.array(X)) != ():
-            if self.test == True:
-                raise ValueError("Fel i evalful")
             self.test = True
 
-            return [self.evalfull(i) for i in X]
+            return [self.evalfull(x) for x in X]
         hot_interval = self.hotinterval(X)
         func_val = 0 
         for i in range(len(self.N)):
@@ -122,15 +120,35 @@ class spline():
             else:
                 evalfunc = self.N[i][hot_interval-i](X)
                 func_val += self.coeff[i]*evalfunc
-        self.test = False
         return func_val
+    
+    
+    def evalvector(self,vector, X):
+        p = self.points
+        Y = []
+        y = array([0,0])
+        for x in X:
+            hi = self.hotinterval(x)
+            func_val = np.array([0.,0.])
+            for i in range(len(self.N)):
+                if hi < i or i+ self.k < hi:
+                    pass
+                else:
+                    evalfunc = self.N[i][hi-i](x)
+                    func_val += vector[i]*np.array(evalfunc)
+#                    print(func_val,np.array(evalfunc),"\n",vector[i])
 
+            Y.append(func_val)
+        Y = np.array(Y)
+        return Y
+    
+            
     def evalbasis(self,x,i):
         p = self.points
         func_val=0
         hot_interval = self.hotinterval(x)
         # If the basis is 0 at x
-        if hot_interval < i or i+self.k < hot_interval:
+        if hot_interval <= i or i+self.k <= hot_interval:
             return 0.
 #        if xi is in the function value return 0
         else:
@@ -142,7 +160,12 @@ class spline():
             if p[i] <= x and x <= p[i+1]:
                 return i
         raise ValueError(x," is not in the interval")
+        
+    def evalbasisi(self,i,x):
+        return self.N[i](x)
     def hotinterval_(self, t):
+        if not self.points[0] <= t <= self.points[-1]:
+            raise ValueError("t is not in the interval.")
         """
         Binary search to find hotspot for t.
         
@@ -152,32 +175,16 @@ class spline():
         Output: 
             Indicies for the knot vector which are precisely smaller and larger in the padded knot vector.
         """
-        
-        def shift(mid): # shift index because of index.
-            return (mid + self.k, mid + self.k + 1)
-    
-        u = self.points
-        first = 0
-        last = len(u) - 1
-        mid = last // 2
-        if u[mid] == u[-1]:
-                return shift(mid)
-        
-        u_left = u[mid]
-        u_right = u[mid + 1]
-        
+
+        pts = self.points
+        first,mid,last = 0, last // 2, len(pts) - 1
+        u_left, u_right = u[mid],  u[mid + 1]
         while (not (u_left <= t <= u_right)): # Note: <= on both sides, since nodes might be coincident
-        
             if (t > u_left):
                 first = mid + 1
             else:
                 last = mid
-                
             mid = (last + first) // 2
-            
-            if u[mid] == u[-1]: # The last point corresponding to Ui+1.start is missing (t[-1]), and we must ensure that u_right doesnt go out of bounds
-                return shift(mid)
-            
             u_left = u[mid]
             u_right = u[mid + 1]
         return mid
@@ -223,85 +230,142 @@ class matrixequation():
 
 
 class interpolation():
-    def __init__(self,points,x,y):
+    def __init__(self,points,x,y, k = 3):
+        self.k = k
         self.interx = x
         self.intery = y
         self.pts = points
         self.xcoeff = matrixequation(x,self.pts)
         self.ycoeff = matrixequation(y,self.pts)
-        self.splinex = spline(points,self.xcoeff.coeff)
-        self.spliney = spline(points,self.ycoeff.coeff)
+        print(self.pts,"pts")
+        self.splinex = spline(self.pts,self.k,self.xcoeff.coeff)
+ 
+        self.spliney = spline(self.pts,self.k,self.ycoeff.coeff)
+    def x(self,x):
         return(self.splinex.evalfull(x))
     def y(self,y):
         return(self.spliney.evalfull(y))
     def plotbasis(self):
-        print("x basis:")
+        print("xbasis:")
         self.splinex.basisplot()
         print("ybasis:")
         self.spliney.basisplot()
     def plotinter(self,pts = 1000):
         t0 = time.time()
         dt = 1/pts
-        t = arange(self.basis[0], self.basis[-1] + dt, dt)
+        t = arange(self.pts[0], self.pts[-1] + dt, dt)
         plt.plot(self.x(t),self.y(t))
         plt.scatter(self.interx,self.intery,color="red")
         print(time.time()-t0)
 
 
+class approximation():
+    def __init__(self,pts,xy):
+        if type(xy) == list:
+            self.xy = np.array(xy)
+        else:
+            self.xy = xy
+        self.pts = pts
+        
+        spl = spline(pts,3,xy)
+        
+        
+        
+        
+### Task 1 
+        
+#knot = [0,0,1,1]
+#A = spline(knot,k=1)
+#A.basisplot()
+#print(A.F)
+#knot2 = [0,1,2,3]
+#A = spline(knot2,k=1)
+#A.basisplot()
+#print(A.F)
+#knot2 = [0,0,0,1,1,1]
+#A = spline(knot2,k=2)
+#A.basisplot()
+#print(A.F)
+#knot2 = [0,1,2,3,4,5]
+#A = spline(knot2,k=2)
+#A.basisplot()
+#print(A.F)
+
+#x = linspace(0,1,50)
+#plt.plot(x,A.evalfull(x))
+### task 2
 
 
+#knot3 =[0,0,0,0.3,0.5,0.5,0.6,1,1,1]
+#A = spline(knot3, k= 3)
+#A.basisplot()
+
+def hotinterval(knot,x):
+    p = knot
+    for i in range(len(p)-1):
+        if p[i] <= x and x <= p[i+1]:
+            return i
+    raise ValueError(x," is not in the interval")
+        
+def hotInterval(knot,t):
+    if not knot[0] <= t <= knot[-1]:
+        raise ValueError("{} is not in the interval".format(t))
+    first,last = 0, len(knot) - 1
+    mid = last // 2
+    k_left, k_right = knot[mid],  knot[mid + 1]
+    while (not (k_left <= t <= k_right)):
+        if (k_left<t):
+            first = mid + 1
+        else:
+            last = mid
+        mid = (last + first) // 2
+        k_left = knot[mid]
+        k_right = knot[mid + 1]
+    if knot[mid] == knot[-1]:
+        mid = mid-1
+    return mid
+def fullsupport(knot, t, deg):
+    return knot[deg] <= t <= knot[-deg-1]
+
+knot = [0, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1]
+pts = [0, 0.12, 0.24, 0.4, 0.53, 0.78, 0.8, 1]
+for i in pts:
+    print(i,fullsupport(knot,i,2))
+a = spline(knot,k=2)
+
+x= linspace(knot[0],knot[-1],100)
+y = a.evalfull(x)
+plt.plot(x,y)
+plt.plot((0.1,0.1),(0,1))
+plt.plot((0.9,0.9),(0,1))
+plt.ylim(-0.1,1.1)
+plt.plot()
+plt.savefig("task4.pdf")
+## Task 4
+#
+#knot = [0, 0, 0, 0.3, 0.5, 0.5, 0.6, 1, 1, 1]
+#control = np.array([[0,0],[3,4],[7,5],[9,2],[13,1],[10,1],[7,1]])
+#
+#A = spline(knot,2)
+#
+#for i in range(len(knot)-1):
+#    X = linspace(knot[i],knot[i+1],20)
+#    Y = A.evalvector(control,X)
+#    plt.plot(Y[:,0],Y[:,1])
+#    plt.scatter(control[:,0],control[:,1])
+#plt.scatter(6,3,s=300)
+#plt.scatter(6.1,3,s=50,color="black")
+#plt.plot((7,6),(1,0))
+#plt.grid()    
+#plt.savefig("interpol2.pdf")
+
+#plt.show()
+#
+#x = [x[0] for x in control]
+#y = [x[1] for x in control]
+#interpolation(knot,x,y,k=3)
 
 
+#interpolation()
 
 
-
-
-
-points = [0,0,0,0, 0.5, 0.9, 0.94, 0.97, 1,1,1,1]
-
-points = [0,1,2,3,4]
-xy = [[2, 5], [4, 8], [4, 5], [2, 7], [3, 5], [6, 7], [4, 5], [2, 7]]
-x = list(x[0] for x in xy)
-y = list(y[1] for y in xy)
-
-
-
-a = spline(points)
-an = a.N
-
-
-a.basisplot()
-#d = d_iterative(points, 4, coeffs,a.xi)
-#c = matrixequation(x,points).Avector()
-#d = matrixequation(y,points).Avector()
-
-#t0 = time.time()
-#interpol= interpolation(points,x,y)
-
-#interpol.plotbasis()
-#interpol.plotinter()
-
-
-#dt = 0.001
-#t = arange(0, 1 + dt, dt)
-#    
-#ux = interpol.x(t)
-#uy = interpol.y(t)
-#plt.scatter(x,y,color="red")
-#plt.plot(ux, uy)
-#print(time.time()-t0)
-
-#print(a)
-
-#plt.xlim(0,6)
-#plt.ylim(0,6)
-
-#print(ux,uy)
-#print(len(x),len(y))
-
-#plt.plot(x,y)
-
-#a = interpolate(x,y,)
-#print(a.N)
-#t = np.linspace(0.1,1,50)
-#ty = a.evalfull(t)
