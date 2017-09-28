@@ -16,7 +16,7 @@ import sympy as sm
 import matplotlib.pyplot as plt
 import sympy
 import scipy
-plt.rcParams["figure.figsize"] = [10,10]
+plt.rcParams["figure.figsize"] = [5,5]
 import time as time
  
 class spline():
@@ -32,7 +32,7 @@ class spline():
             self.coeff = coeff
         self.x = sm.Symbol("x")
 #        self.lastx = kn
-        self.N,self.F =self.basicfunction()
+        self.N,self.F =self.basicfunction(self.points)
  
     #### Loading functions ###
     """ functions that will load when a variable is called with this class"""
@@ -42,19 +42,11 @@ class spline():
         in the recurrence function"""
         return [p[i]+(p[i+1]-p[i])/2 for i in range(len(p)-1)]
      
-    def getrelpts(self):
-        n = len(self.points)-self.k-1
-        p= [self.points[i:i+self.k+2] for i in range(n)]
+    def __getrelpts(self,knot):
+        n = len(knot)-self.k-1
+        p= [knot[i:i+self.k+2] for i in range(n)]
         return(p)
-    def movepoint(self,new_point,index_oldpoint):
-        updatebasislist = [index_oldpoint]
-           
-    def updatebasis(self, newpoints):
-        N1,F1 = self.N,self.F
-        self.points = newpoints
-        N2,F2 = self.basicfunction()
-        
-        
+
     def rec(self, p, i, k, xi):
         """recurrence formula for b-spline"""
         # We should lambdify this function for higer speed.
@@ -74,14 +66,63 @@ class spline():
             u =  (div((self.x-p[i]),(p[i+k-1]-p[i]))*self.rec(p,i,k-1,xi)+
                   div((p[i+k]-self.x),(p[i+k]-p[i+1]))*self.rec(p,i+1,k-1,xi))
             return u
-
-            
+          
+    def updatebasis(self, newknot):
+        """
+        Updates the spline whith a new knot vector
+        Returns the index of the basisfunctions that will be changed
+        """
+        if len(newknot)!=len(self.points):
+            raise ValueError("len(newpoints) must be the same as len(oldpoints)")
+        N1,F1 = self.N,self.F
         
-    def basicfunction(self):
+        self.points = newknot
+        self.N,self.F = self.basicfunction(newknot)
+        
+        changelist=[]
+        for i in range(len(F1)):
+            if self.F[i] != F1[i]:
+                changelist.append(i)      
+        return(changelist)
+        
+        
+        
+    def moveknot(self,old,new): 
+        newpts = self.points[:] #to make deep copy
+        newpts.append(new)
+        newpts.remove(old)
+        newpts = sorted(newpts)
+        oldrelpts = self.__getrelpts(self.points)
+        newrelpts = self.__getrelpts(newpts)
+        changes = list()
+        for i in range(len(newrelpts)):
+            if oldrelpts[i] != newrelpts[i]:
+                changes.append(i)
+        self.__updatebasisfunction(changes,newpts)
+        self.points = newpts
+        return changes
+
+    def __updatebasisfunction(self,listindex,newpts):
+        p = self.__getrelpts(newpts)
+        print(newpts,"newpts update")
+        for i in listindex:
+            n2=[]
+            f2 = []
+            xi = self.ref(p[i])
+            for j in range(self.k+1):
+                func = self.rec(p[i],0,self.k+1,xi[j])
+                evalfunc = lambdify(self.x, func, modules=['numpy'])
+                n2.append(evalfunc)
+                f2.append(func)
+            self.N[i] = n2
+            self.F[i] = f2
+#        return n1,f1
+                
+    def basicfunction(self,knot):
         n1 = []
         f1 = []
-        p = self.getrelpts()
-         
+        p = self.__getrelpts(knot)
+        print(knot)
         for i in range(len(p)):
             n2=[]
             f2 = []
@@ -96,9 +137,16 @@ class spline():
              
         return n1,f1
  
-    def basisplot(self):
-        """ Plots all the basis functions """
-        for i in range(len(self.N)):
+    def basisplot(self,i=None):
+        """ Plots all the basis functions
+        param i: list of the basis functions we whats to plot
+        """
+        if i==None:
+            n = range(len(self.N))
+            points = self.points
+        else:
+            n = i
+        for i in n:
             for j in range(len(self.N[i])):
                 if self.N[i][j]!= 0:
                     x = linspace(self.points[i+j],self.points[i+j+1],50)
@@ -128,8 +176,6 @@ class spline():
         p = self.points
         Y = []
         y = array([0,0])
-#        X =np.linspace(self.p[0],self.p[-1])
-#        if len
         for x in X:
             hi = self.hotinterval(x)
             func_val = np.array([0.,0.])
@@ -220,8 +266,8 @@ class matrixequation:
         return xy
  
     def solver(self):
-        print(np.shape(self.xy),np.shape(self.A))
-        print("HWJ")
+#        print(np.shape(self.xy),np.shape(self.A))
+#        print("HWJ")
         z = scipy.linalg.solve(self.A,np.array(self.xy).transpose())
         self.coeff = z
         return(z)
@@ -257,14 +303,25 @@ class interpolation:
         print(time.time()-t0)
  
 
-knot = [0,0,0,0,1,2,3,4,5,6,7,7,7,7]
-knot2 = [0,0,0,0,1,2,3.9,4,5,6,7,7,7,7]
-
+knot =  [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7]
+#knot2 = [0, 0, 0, 0, 1, 2, 3, 3, 5, 6, 7, 7, 7, 7]
+knot2 = [0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 7, 7, 7, 7]
 s = spline(knot)
+#s.basisplot()
+
+#s1.basisplot()
+#print("incorrect",s.updateknot(4,3))
+s.moveknot(6,1)
+#changes = s2.updatebasis(knot2)
+#print("correct  ",changes)
+#
+#
 s.basisplot()
-#plt.show()
-s1 = spline(knot2)
-s1.basisplot()
+plt.ylim([0,1])
+plt.show()
 
-
-
+print("spline2")
+s2 = spline(knot2)
+s2.basisplot()
+plt.ylim([0,1])
+plt.show()
