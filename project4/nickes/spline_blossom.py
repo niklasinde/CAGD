@@ -74,14 +74,15 @@ class spline():
         """
         if len(newknot)!=len(self.points):
             raise ValueError("len(newpoints) must be the same as len(oldpoints)")
-        N1,F1 = self.N,self.F
+        N1,F1 = self.N[:],self.F[:]
         
         self.points = newknot
         self.N,self.F = self.basicfunction(newknot)
-        
+        print("hej")
         changelist=[]
         for i in range(len(F1)):
             if self.F[i] != F1[i]:
+                print(True)
                 changelist.append(i)      
         return(changelist)
         
@@ -100,6 +101,7 @@ class spline():
                 changes.append(i)
         self.__updatebasisfunction(changes,newpts)
         self.points = newpts
+        print(changes)
         return changes
 
     def __updatebasisfunction(self,listindex,newpts):
@@ -303,17 +305,17 @@ class interpolation:
         print(time.time()-t0)
  
 
-knot =  [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7]
+knot =  [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
 #knot2 = [0, 0, 0, 0, 1, 2, 3, 3, 5, 6, 7, 7, 7, 7]
-knot2 = [0, 0, 0, 0, 1, 1, 2, 3, 4, 5, 7, 7, 7, 7]
+knot2 = [0, 0, 0, 0, 1, 2, 3, 5, 5.5, 6, 7, 8, 9, 10, 10, 10, 10]
 s = spline(knot)
 #s.basisplot()
-
-#s1.basisplot()
-#print("incorrect",s.updateknot(4,3))
-s.moveknot(6,1)
-#changes = s2.updatebasis(knot2)
-#print("correct  ",changes)
+s2 = spline(knot)
+#s2.basisplot()
+print("incorrect",s.moveknot(4,5.5))
+#print(s.moveknot(1,9.5))
+changes = s2.updatebasis(knot2)
+print("correct  ",changes)
 #
 #
 s.basisplot()
@@ -325,3 +327,14 @@ s2 = spline(knot2)
 s2.basisplot()
 plt.ylim([0,1])
 plt.show()
+
+
+"""
+Midnight questions
+
+Points between the changing points appear to always want to change
+
+Points at the end maybe want to change
+look how i behaves/changes when you move a point in a certain direction.
+
+"""
