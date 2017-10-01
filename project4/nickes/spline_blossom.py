@@ -78,7 +78,7 @@ class spline():
         
         self.points = newknot
         self.N,self.F = self.basicfunction(newknot)
-        print("hej")
+#        print("hej")
         changelist=[]
         for i in range(len(F1)):
             if self.F[i] != F1[i]:
@@ -86,13 +86,14 @@ class spline():
                 changelist.append(i)      
         return(changelist)
         
-        
-        
-    def moveknot(self,old,new): 
+    def updatepoints(self,old,new):
         newpts = self.points[:] #to make deep copy
         newpts.append(new)
         newpts.remove(old)
         newpts = sorted(newpts)
+        return newpts
+    def moveknot(self,old,new): 
+        newpts = self.updatepoints(old,new)
         oldrelpts = self.__getrelpts(self.points)
         newrelpts = self.__getrelpts(newpts)
         changes = list()
@@ -101,12 +102,12 @@ class spline():
                 changes.append(i)
         self.__updatebasisfunction(changes,newpts)
         self.points = newpts
-        print(changes)
         return changes
-
+    def moveknot2(self,old,new):
+        newpts = self.updatepoints(old,new)
     def __updatebasisfunction(self,listindex,newpts):
         p = self.__getrelpts(newpts)
-        print(newpts,"newpts update")
+#        print(newpts,"newpts update")
         for i in listindex:
             n2=[]
             f2 = []
@@ -124,7 +125,7 @@ class spline():
         n1 = []
         f1 = []
         p = self.__getrelpts(knot)
-        print(knot)
+#        print(knot)
         for i in range(len(p)):
             n2=[]
             f2 = []
@@ -327,7 +328,7 @@ s2 = spline(knot2)
 s2.basisplot()
 plt.ylim([0,1])
 plt.show()
-
+print("done")
 
 """
 Midnight questions
