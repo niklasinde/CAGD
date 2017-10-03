@@ -83,7 +83,7 @@ class Spline:
             self.coeff = coeff
         
         self.x = sm.Symbol("x")
-        self.N, self.F = self.basicfunction(self.points)
+        self.N, self.F = self.basisfunction(self.points)
 
     # Loading functions
     """ functions that will load when a variable is called with this class"""
@@ -130,7 +130,7 @@ class Spline:
         N1, F1 = self.N[:], self.F[:]
 
         self.points = newknot
-        self.N, self.F = self.basicfunction(newknot)
+        self.N, self.F = self.basisfunction(newknot)
 
         changelist = []
         for i in range(len(F1)):
@@ -155,21 +155,7 @@ class Spline:
                 changes.append(i)
         self.__update_basisfunction(changes, newpts)
         self.points = newpts
-        return changes
-    def effected_points(self, new, old):
-        newpts = self.__updatepoints(new,old)
-        mul_new = False
-        for i in range(newpts):
-            if new == self.points:
-                mul_new = True
-        changes = list()
-        ht_new = self.hotinterval(new)
-        
-        # old
-        for i in range(len(newpts)):
-            if (ht_new < i or i + self.k < ht_new) :
-                changes.append
-        
+        return changes        
         
     def __update_basisfunction(self, listindex: list, newpts: list) -> None:
         p = self.__getrelpts(newpts)
@@ -185,7 +171,7 @@ class Spline:
             self.N[i] = n2
             self.F[i] = f2
 
-    def basicfunction(self, knot):
+    def basisfunction(self, knot):
         n1 = []
         f1 = []
         p = self.__getrelpts(knot)
@@ -219,7 +205,7 @@ class Spline:
                                  self.points[i + j + 1], 50)
                     y = self.coeff[i] * self.N[i][j](x)
                     plt.plot(x, y)
-        plt.title("Plot of the basic functions for the splines")
+#        plt.title("Plot of the basis functions for the splines")
 
     def evalfull(self, X):
         if np.shape(np.array(X)) != ():
@@ -238,7 +224,7 @@ class Spline:
 
     def eval_vector(self, control, xlist):
         if len(self.N) != len(control):
-            raise Exception("You need "+ str(len(self.N)) + " controlpoints")
+            raise Exception("You need "+ str(len(self.N)) + " controlpoints. Now you have "+ str(len(control))+" you idiot")
         y_list = []
         
         for x in xlist:
@@ -259,13 +245,17 @@ class Spline:
 #            raise Exception("Fix points")
         FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
         for i in range(len(knot)-1):
-            if (FullSupport(knot,knot[i],3) and FullSupport(knot,knot[i+1],3)) or True:
+
+            if not (FullSupport(knot,knot[i],3) and FullSupport(knot,knot[i+1],3)):
                 X = np.linspace(knot[i],knot[i+1],30)
                 Y = self.eval_vector(control,X)
-                plt.plot(Y[:, 0],Y[:, 1])
-        print(control)
+                plt.plot(Y[:, 0],Y[:, 1], color = "black",linewidth=2)
+            else:
+                X = np.linspace(knot[i],knot[i+1],30)
+                Y = self.eval_vector(control,X)
+                plt.plot(Y[:, 0],Y[:, 1],linewidth=2)
         plt.scatter(control[:, 0],control[:, 1])
-        plt.show()
+#        plt.show()
         
     
     def eval_basis(self, x, i):
@@ -287,6 +277,7 @@ class Spline:
         raise ValueError(x, " is not in the interval")
     def check_full_support(self):
         FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
+        
         for i in range(len(self.points)):
             if FullSupport(self.points,self.points[i],self.k):
                 pass
@@ -299,19 +290,63 @@ class Spline:
 
 
 
-
-knot = [0,0,0,0,0,1,2,3,8,8,8,8,8]
-control = np.array([[0,0], [3,2], [9,-2], [7,-5], [1,-3],
-                    [1,-1],[10,10],[12,3]])
-
-A = Spline(knot, k=4)
-#print(A.check_full_support())
+# Task 1
+#knot = [0,0,0,0,0,1,2,3,4,5,6,7,8,8,8,8,8]
+#control = np.array([[4,0], [2,1], [2,1], [8,10], [4,2],
+#                    [10,0],[5,-1],[4,-7],[2,-4],[2,1],[-1,2],[10,10]])
+#control2 = np.array([[4,0], [2,1], [2,1], [8,10], [4,2],
+#                    [5,0],[5,-1],[4,-7],[2,-4],[2,1],[-1,2],[10,10]])
+#A = Spline(knot, k=4, coeff=control[:,0])
+#B = Spline(knot, k=4, coeff=control2[:,0])
+#
+#O = Spline(knot, k=4)
+##O.basisplot()
+##plt.savefig("bajs.pdf")
+#
 #A.basisplot()
-A.render_vector(control)
-
-#plt.savefig("basisplot.pdf")
-
-
+#plt.savefig("Basis1.pdf")
+#plt.show()
+##
+#B.basisplot()
+#plt.savefig("Basis2.pdf")
+#plt.show()
+#A.render_vector(control)
+#plt.savefig("Interpol1.pdf")
+#plt.show()
+#A.render_vector(control2)
+#plt.savefig("Interpol2.pdf")
+#plt.show()
+        
+    
+# Task 5
+#knot = [0, 1/11, 2/11, 3/11, 4/11, 5/11, 6/11, 7/11, 8/11, 9/11, 10/11, 1]
+#control = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [9,-1]]) 
+#control2 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [0,0]]) 
+#control3 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [0,0],[9,1]]) 
+#control4 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [0,0], [3,1],[9,1]]) 
+#
+#A = Spline(knot,k=3,coeff = control[:,0])
+#A.render_vector(control)
+#plt.savefig("Task51.pdf")
+#plt.show()
+#A.basisplot()
+#plt.savefig("Task51basis.pdf")
+#plt.show()
+#
+#B = Spline(knot,k=3)
+#B.render_vector(control2)
+#plt.savefig("Task52.pdf")
+#plt.show()
+#
+#B = Spline(knot,k=3)
+#B.render_vector(control3)
+#plt.savefig("Task53.pdf")
+#plt.show()
+#
+#B = Spline(knot,k=3,coeff = control4[:,0])
+#B.render_vector(control4)
+#plt.savefig("Task54.pdf")
+#plt.show()
 
 
 class MatrixEquation:
