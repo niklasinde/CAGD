@@ -13,21 +13,75 @@ import sympy as sm
 import matplotlib.pyplot as plt
 import time as time
 import scipy as sp
-plt.rcParams["figure.figsize"] = [5, 5]
+plt.rcParams["figure.figsize"] = [9, 5]
 
+          
+class DeBoor:
+    def __init__(self, knot, control, deg):
+        self.control = control
+        self.knot = knot
+        self.deg = deg
+    def __call__(self, x):
+        if np.shape(np.array(x)) != ():
+            return np.array(list((self.__call__(bajs) for bajs in x)))
+        return self.deBoor(self.hotinterval(x), x, self.knot, self.control, self.deg)
 
+    def deBoor(self, k, x, t, c, p):
+
+        """
+        Evaluates S(x).
+
+        Args
+        ----
+        k: index of knot interval that contains x
+        x: position
+        t: array of knot positions, needs to be padded as described above
+        c: array of control points
+        p: degree of B-spline
+        """
+#        print(k,t[k])
+#        print(c[p+1 + k - p])
+        d = [c[j + k - p] for j in range(0, p + 1)]
+        for i in range(1, p + 1):
+            for j in range(p, i - 1, -1):
+                if t[j + 1 + k - i] - t[j + k - p] == 0:
+                    alpha = 1
+                else:
+                    alpha = (x - t[j + k - p]) / (t[j + 1 + k - i] - t[j + k - p])
+                d[j] = (1.0 - alpha) * d[j - 1] + alpha * d[j]
+        return d[p]
+
+    def hotinterval(self, x):
+        p = self.knot
+        for i in range(len(p)-1):
+            if p[i] <= x and x <= p[i+1]:
+                return i
+        raise ValueError(x, " is not in the interval")
+    def render(self):
+        for i in range(len(self.knot)-1):
+            X = np.linspace(self.knot[i],self.knot[i+1],30)
+
+            Y = self.__call__(X)
+            plt.plot(Y[:,0],Y[:,1])
+        plt.scatter(control[:,0],control[:,1])
+        plt.show()
+
+        
 class Spline:
     """ Class to calculate a spline"""
 
     def __init__(self, knot, k=3, coeff=None):
         if len(knot) <= k + 1:
             raise SyntaxError("We need atleast k+1 number of points in the knotvector")
+        if sorted(knot) != knot:
+            raise Exception("knot needs to be sorted.")
         self.k = k
         self.points = knot
         if not type(coeff) == np.ndarray:
             self.coeff = [1 for i in range(len(self.points) - self.k - 1)]
         else:
             self.coeff = coeff
+        
         self.x = sm.Symbol("x")
         self.N, self.F = self.basicfunction(self.points)
 
@@ -42,7 +96,7 @@ class Spline:
 
     def __getrelpts(self, knot):
         n = len(knot) - self.k - 1
-        p = [knot[i:i + self.k + 2] for i in range(n)]
+        p = [knot[i:i + self.k + 2] for i in range(n)] # len(p[0]) = self.k + 2
         return (p)
 
     def rec(self, p, i, k, xi):
@@ -81,11 +135,10 @@ class Spline:
         changelist = []
         for i in range(len(F1)):
             if self.F[i] != F1[i]:
-#                print(True)
                 changelist.append(i)
         return (changelist)
 
-    def updatepoints(self, old, new):
+    def __updatepoints(self, old, new):
         newpts = self.points[:]  # to make deep copy
         newpts.append(new)
         newpts.remove(old)
@@ -93,7 +146,7 @@ class Spline:
         return newpts
 
     def moveknot(self, old, new):
-        newpts = self.updatepoints(old, new)
+        newpts = self.__updatepoints(old, new)
         oldrelpts = self.__getrelpts(self.points)
         newrelpts = self.__getrelpts(newpts)
         changes = list()
@@ -103,7 +156,21 @@ class Spline:
         self.__update_basisfunction(changes, newpts)
         self.points = newpts
         return changes
-
+    def effected_points(self, new, old):
+        newpts = self.__updatepoints(new,old)
+        mul_new = False
+        for i in range(newpts):
+            if new == self.points:
+                mul_new = True
+        changes = list()
+        ht_new = self.hotinterval(new)
+        
+        # old
+        for i in range(len(newpts)):
+            if (ht_new < i or i + self.k < ht_new) :
+                changes.append
+        
+        
     def __update_basisfunction(self, listindex: list, newpts: list) -> None:
         p = self.__getrelpts(newpts)
         for i in listindex:
@@ -170,11 +237,13 @@ class Spline:
         return func_val
 
     def eval_vector(self, control, xlist):
+        if len(self.N) != len(control):
+            raise Exception("You need "+ str(len(self.N)) + " controlpoints")
         y_list = []
+        
         for x in xlist:
             
             hi = self.hotinterval(x)
-            print(hi)
             func_val = np.array([0., 0.])
             for i in range(len(self.N)):
                 if hi < i or i + self.k < hi:
@@ -185,7 +254,20 @@ class Spline:
             y_list.append(func_val)
         y_list = np.array(y_list)
         return y_list
-
+    def render_vector(self, control):
+#        if len(control)+self.k+1 != len(self.points):
+#            raise Exception("Fix points")
+        FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
+        for i in range(len(knot)-1):
+            if (FullSupport(knot,knot[i],3) and FullSupport(knot,knot[i+1],3)) or True:
+                X = np.linspace(knot[i],knot[i+1],30)
+                Y = self.eval_vector(control,X)
+                plt.plot(Y[:, 0],Y[:, 1])
+        print(control)
+        plt.scatter(control[:, 0],control[:, 1])
+        plt.show()
+        
+    
     def eval_basis(self, x, i):
         hot_interval = self.hotinterval_(x)
         if hot_interval < i or i + self.k < hot_interval:
@@ -203,6 +285,33 @@ class Spline:
             if p[i] <= x and x <= p[i+1]:
                 return i
         raise ValueError(x, " is not in the interval")
+    def check_full_support(self):
+        FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
+        for i in range(len(self.points)):
+            if FullSupport(self.points,self.points[i],self.k):
+                pass
+            else:
+                print("You dont have full support")
+                return(False)
+        return True
+      
+
+
+
+
+
+knot = [0,0,0,0,0,1,2,3,8,8,8,8,8]
+control = np.array([[0,0], [3,2], [9,-2], [7,-5], [1,-3],
+                    [1,-1],[10,10],[12,3]])
+
+A = Spline(knot, k=4)
+#print(A.check_full_support())
+#A.basisplot()
+A.render_vector(control)
+
+#plt.savefig("basisplot.pdf")
+
+
 
 
 class MatrixEquation:
@@ -266,112 +375,10 @@ class Interpolation:
         self.spliney.basisplot()
 
     def plotinter(self, pts=1000):
-
         dt = 1 / pts
         t = np.arange(self.pts[0], self.pts[-1] + dt, dt)
         plt.plot(self.x(t), self.y(t))
         plt.scatter(self.interx, self.intery, color="red")
-
-
-class DeBoor:
-    def __init__(self, knot, control, deg):
-        self.control = control
-        self.knot = knot
-        self.deg = deg
-    def __call__(self, x):
-        if np.shape(np.array(x)) != ():
-            return np.array(list((self.__call__(bajs) for bajs in x)))
-        return self.deBoor(self.hotinterval(x), x, self.knot, self.control, self.deg)
-
-    def deBoor(self, k, x, t, c, p):
-
-        """
-        Evaluates S(x).
-
-        Args
-        ----
-        k: index of knot interval that contains x
-        x: position
-        t: array of knot positions, needs to be padded as described above
-        c: array of control points
-        p: degree of B-spline
-        """
-        d = [c[j + k - p] for j in range(0, p + 1)]
-        for i in range(1, p + 1):
-            for j in range(p, i - 1, -1):
-                
-                if t[j + 1 + k - i] - t[j + k - p] == 0:
-                    alpha = 1
-                else:
-                    alpha = (x - t[j + k - p]) / (t[j + 1 + k - i] - t[j + k - p])
-                d[j] = (1.0 - alpha) * d[j - 1] + alpha * d[j]
-        return d[p]
-
-    def hotinterval(self, x):
-        p = self.knot
-#        print(x,p[0],"fel")
-        for i in range(len(p)-1):
-            if p[i] <= x and x <= p[i+1]:
-                return i
-        raise ValueError(x, " is not in the interval")
-
-
-
-
-#knot = [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
-# knot2 = [0, 0, 0, 0, 1, 2, 3, 3, 5, 6, 7, 7, 7, 7]
-#knot2 = [0, 0, 0, 0, 1, 2, 3, 5, 5.5, 6, 7, 8, 9, 10, 10, 10, 10]
-#s = Spline(knot)
-#s.basisplot()
-#s2 = Spline(knot)
-#s2.basisplot()
-#print("incorrect", s.moveknot(4, 5.5))
-# print(s.moveknot(1,9.5))
-#changes = s2.update_basis(knot2)
-#print("correct  ", changes)
-#s.basisplot()
-#plt.ylim([0, 1])
-#plt.show()
-
-#print("spline2")
-#s2 = Spline(knot2)
-#s2.basisplot()
-#plt.ylim([0, 1])
-#plt.show()
-#print("done")
-
-
-knot = [1,1,1,1,6/5,7/5,8/5,9/5,2,2,2,2]
-control = np.array([[0.7,-0.4],[1.0,-0.4],[2.5,-1.2],
-                    [3.2,-.5],[-0.2,-.5],[.5,-1.2],[2.0,-.4],[2.3,-.4]])
-#                    [0.7,−0.4],[1.0,−0.4],[2.5,−1.2],
-#                    [3.2,−.5],[−0.2,−.5],[.5,−1.2],[2.0,−.4],[2.3,−.4]
-save = False
-D = DeBoor(knot,control,2)
-A = Spline(knot, k=2)
-for i in range(len(knot)-1):
-    X = np.linspace(knot[i],knot[i+1],30)
-#    print(X[0],"x")
-    Y = D(X)
-#    if i = 1
-#    print(Y[:,0],Y[:,1])
-    plt.plot(Y[:,0],Y[:,1])
-plt.scatter(control[:,0],control[:,1])
-
-
-plt.grid()
-if save:
-   plt.savefig("interpol2.pdf")
-
-plt.show()
-
-
-knot = [0, 0, 0, 0.3, 0.5, 0.5, 0.6, 1, 1, 1]
-control = np.array([[0,0],[2,3],[7,5],[9,2],[13,1],[10,1],[7,1]])
-
-D = DeBoor(knot,control,2)
-x= np.linspace(0,0,1)
-
 
 
 
