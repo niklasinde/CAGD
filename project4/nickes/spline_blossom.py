@@ -70,12 +70,16 @@ class DeBoor:
 class Spline:
     """ Class to calculate a spline"""
 
-    def __init__(self, knot, k=3, coeff=None):
+    def __init__(self, knot, k=3, coeff=None): 
+        """
+        Knot is the knot vector
+        Coefficients are inputed if we have 1d coeffcents else use the eval_vector function.
+        """
         if len(knot) <= k + 1:
             raise SyntaxError("We need atleast k+1 number of points in the knotvector")
         if sorted(knot) != knot:
             raise Exception("knot needs to be sorted.")
-        self.k = k
+        self.k = k # degree of basis spline
         self.points = knot
         if not type(coeff) == np.ndarray:
             self.coeff = [1 for i in range(len(self.points) - self.k - 1)]
@@ -95,6 +99,11 @@ class Spline:
         return [p[i] + (p[i + 1] - p[i]) / 2 for i in range(len(p) - 1)]
 
     def __getrelpts(self, knot):
+        """
+        Relative points are used for calculating the b-spline
+        The B-spline, B_i(x) have the knots p_i
+        By using this we can have i = 0 in the reccurent formula.
+        """
         n = len(knot) - self.k - 1
         p = [knot[i:i + self.k + 2] for i in range(n)] # len(p[0]) = self.k + 2
         return (p)
@@ -119,26 +128,37 @@ class Spline:
             u = (div((self.x - p[i]), (p[i + k - 1] - p[i])) * self.rec(p, i, k - 1, xi) +
                  div((p[i + k] - self.x), (p[i + k] - p[i + 1])) * self.rec(p, i + 1, k - 1, xi))
             return u
-
-    def update_basis(self, newknot):
+    def basisfunction(self, knot):
         """
-        Updates the spline whith a new knot vector
-        Returns the index of the basisfunctions that will be changed
+        Creates the basisfunctions
+        
+        Each basis function consists of its own functions.
+        They are stored in n2 and then appended to n1.
+        
+        This functions then returns n1 and f1. n1 is the lambdified version of f1
+        but its not used for computing only if we wich to see the basis equations.
+        
         """
-        if len(newknot) != len(self.points):
-            raise ValueError("len(newpoints) must be the same as len(oldpoints)")
-        N1, F1 = self.N[:], self.F[:]
-
-        self.points = newknot
-        self.N, self.F = self.basisfunction(newknot)
-
-        changelist = []
-        for i in range(len(F1)):
-            if self.F[i] != F1[i]:
-                changelist.append(i)
-        return (changelist)
+        n1 = list()
+        f1 = list()
+        p = self.__getrelpts(knot)
+        for i in range(len(p)):
+            n2 = list()
+            f2 = list()
+            xi = self.ref(p[i])
+            for j in range(self.k + 1):
+                func = self.rec(p[i], 0, self.k + 1, xi[j])
+                evalfunc = lambdify(self.x, func, modules=['numpy'])
+                n2.append(evalfunc)
+                f2.append(func)
+            n1.append(n2)
+            f1.append(f2)
+        return n1, f1
 
     def __updatepoints(self, old, new):
+        """
+        Updates the knot vector
+        """
         newpts = self.points[:]  # to make deep copy
         newpts.append(new)
         newpts.remove(old)
@@ -146,6 +166,12 @@ class Spline:
         return newpts
 
     def moveknot(self, old, new):
+        """
+        Because of local support we do not have to change all the basis functions.
+        Only the basis function whos not have changed.
+        Instead of commparing the relative points we could find the change
+        by knowing the index of the new and old points.
+        """
         newpts = self.__updatepoints(old, new)
         oldrelpts = self.__getrelpts(self.points)
         newrelpts = self.__getrelpts(newpts)
@@ -158,6 +184,9 @@ class Spline:
         return changes        
         
     def __update_basisfunction(self, listindex: list, newpts: list) -> None:
+        """
+        Only changes the basisfunction we want
+        """
         p = self.__getrelpts(newpts)
         for i in listindex:
             n2 = []
@@ -171,24 +200,7 @@ class Spline:
             self.N[i] = n2
             self.F[i] = f2
 
-    def basisfunction(self, knot):
-        n1 = []
-        f1 = []
-        p = self.__getrelpts(knot)
-        #        print(knot)
-        for i in range(len(p)):
-            n2 = []
-            f2 = []
-            xi = self.ref(p[i])
-            for j in range(self.k + 1):
-                func = self.rec(p[i], 0, self.k + 1, xi[j])
-                evalfunc = lambdify(self.x, func, modules=['numpy'])
-                n2.append(evalfunc)
-                f2.append(func)
-            n1.append(n2)
-            f1.append(f2)
 
-        return n1, f1
 
     def basisplot(self, i=None):
         """ Plots all the basis functions
@@ -205,9 +217,11 @@ class Spline:
                                  self.points[i + j + 1], 50)
                     y = self.coeff[i] * self.N[i][j](x)
                     plt.plot(x, y)
-#        plt.title("Plot of the basis functions for the splines")
 
     def evalfull(self, X):
+        """
+        Evaluates the sum{c_iB_i(x)}
+        """
         if np.shape(np.array(X)) != ():
             self.test = True
             return [self.evalfull(x) for x in X]
@@ -223,12 +237,14 @@ class Spline:
         return func_val
 
     def eval_vector(self, control, xlist):
+        """
+        eval_full but the coefficents 2d. (controlpoints)
+        """
         if len(self.N) != len(control):
-            raise Exception("You need "+ str(len(self.N)) + " controlpoints. Now you have "+ str(len(control))+" you idiot")
+            raise Exception("You need "+ str(len(self.N)) + " controlpoints. Now you have "+ str(len(control)))
         y_list = []
-        
+
         for x in xlist:
-            
             hi = self.hotinterval(x)
             func_val = np.array([0., 0.])
             for i in range(len(self.N)):
@@ -240,13 +256,17 @@ class Spline:
             y_list.append(func_val)
         y_list = np.array(y_list)
         return y_list
+
     def render_vector(self, control):
-#        if len(control)+self.k+1 != len(self.points):
-#            raise Exception("Fix points")
+        """
+        plots eval_vector with different colors in each segment
+        """
+        if len(self.N) != len(control):
+            raise Exception("You need "+ str(len(self.N)) + " controlpoints. Now you have " + str(len(control)))
         FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
         for i in range(len(knot)-1):
 
-            if not (FullSupport(knot,knot[i],3) and FullSupport(knot,knot[i+1],3)):
+            if not (FullSupport(knot,knot[i], 3) and FullSupport(knot, knot[i+1], 3)):
                 X = np.linspace(knot[i],knot[i+1],30)
                 Y = self.eval_vector(control,X)
                 plt.plot(Y[:, 0],Y[:, 1], color = "black",linewidth=2)
@@ -319,19 +339,19 @@ class Spline:
         
     
 # Task 5
-#knot = [0, 1/11, 2/11, 3/11, 4/11, 5/11, 6/11, 7/11, 8/11, 9/11, 10/11, 1]
-#control = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [9,-1]]) 
+knot = [0, 1/11, 2/11, 3/11, 4/11, 5/11, 6/11, 7/11, 8/11, 9/11, 10/11, 1]
+control = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [9,-1]]) 
 #control2 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [0,0]]) 
 #control3 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [0,0],[9,1]]) 
 #control4 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [0,0], [3,1],[9,1]]) 
 #
-#A = Spline(knot,k=3,coeff = control[:,0])
-#A.render_vector(control)
+A = Spline(knot,k=3,coeff = control[:,0])
+A.render_vector(control)
 #plt.savefig("Task51.pdf")
-#plt.show()
-#A.basisplot()
+plt.show()
+A.basisplot()
 #plt.savefig("Task51basis.pdf")
-#plt.show()
+plt.show()
 #
 #B = Spline(knot,k=3)
 #B.render_vector(control2)
