@@ -27,9 +27,26 @@ class deBoor:
 
         return d[p]
 
-    def eval(self, x):
-        if shape(array(x)) != (): return array(list((self.eval(_) for _ in x)))
-        return self.run(self.activeknots(x), x, self.u, self.b, self.p)
+    def eval(self, x, controlpoints):
+        if shape(array(x)) != (): return array(list((self.eval(_, controlpoints) for _ in x)))
+
+        return self.run(self.activeknots(x), x, self.u, controlpoints, self.p)
+
+    def NURBS(self, weights):
+        # (1) Multiply control points with weights.
+        # (2) Run de Boor.
+        # (3) Convert back by dividing the first components by the last one.
+        # (-) The last component of each new control point is its weight.
+
+        new_b = array(list( weights[i]*append(x, 1) for i,x in enumerate(self.b.copy()) ))
+
+        for i in range(self.m):
+            X = linspace(self.u[i], self.u[i+1], 30)
+            Y = self.eval(X, controlpoints = new_b)
+
+            Y = array(list( y[:2]*y[-1] for y in Y ))
+
+            plot(Y[:, 0], Y[:, 1])
 
 
     def render(self):
@@ -40,9 +57,9 @@ class deBoor:
 
         for i in range(self.m):
             X = linspace(self.u[i], self.u[i+1], 30)
-            Y = self.eval(X)
+            Y = self.eval(X, controlpoints = self.b)
 
-            plot(Y[:, 0], Y[:, 1])
+            plot(Y[:, 0], Y[:, 1], alpha =0.2)
 
 if __name__=='__main__':
     points = array([ [0.5, 0],
@@ -55,15 +72,26 @@ if __name__=='__main__':
                      [1, 0],
                      [0.5, 0] ])
 
-    knots = array([ 0, 0, 0, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1, 1, 1])
+    knots = array([ 0, 0, 0, 0.15, 0.35, 0.50, 0.70, 0.85, 0.95, 1, 1, 1])
+    weights = array([ 1,
+                      0.9,
+                      0.65,
+                      0.88,
+                      1.03,
+                      0.92,
+                      1.01,
+                      0.95,
+                      1 ])
     degree = 2
 
     print('nr of knots: ', len(knots), 'nr of points: ', len(points[:, 0]), 'degree: ', degree,
-          'm: ', len(points[:, 0])+degree)
+            'm: ', len(points[:, 0])+degree, '|||||| nr of weights :', len(weights))
 
     Curve = deBoor(points, knots, degree)
     Curve.render()
+    Curve.NURBS(weights)
     grid()
+    #savefig('prob3_1.pdf')
     show()
 
 
