@@ -38,13 +38,20 @@ class deBoor:
         # (3) Convert back by dividing the first components by the last one.
         # (-) The last component of each new control point is its weight.
 
-        new_b = array(list( weights[i]*append(x, 1) for i,x in enumerate(self.b.copy()) ))
+        def step1():
+            return  array(list( weights[i]*append(x, 1) for i,x in enumerate(self.b.copy()) ))
+
+        def step2(i):
+            X = linspace(self.u[i], self.u[i+1], 30)
+            return self.eval(X, controlpoints = new_b)
+
+        def step3(fx):
+            return array(list( y[:2]*y[-1] for y in fx ))
+
+        new_b = step1()
 
         for i in range(self.m):
-            X = linspace(self.u[i], self.u[i+1], 30)
-            Y = self.eval(X, controlpoints = new_b)
-
-            Y = array(list( y[:2]*y[-1] for y in Y ))
+            Y = step3( step2(i) )
 
             plot(Y[:, 0], Y[:, 1])
 
@@ -72,15 +79,15 @@ if __name__=='__main__':
                      [1, 0],
                      [0.5, 0] ])
 
-    knots = array([ 0, 0, 0, 0.15, 0.35, 0.50, 0.70, 0.85, 0.95, 1, 1, 1])
+    knots = array([ 0, 0, 0, 2/9, 2/9, 4/9, 4/9, 8/9, 8/9, 1, 1, 1])
     weights = array([ 1,
-                      0.9,
-                      0.65,
-                      0.88,
-                      1.03,
-                      0.92,
-                      1.01,
-                      0.95,
+                      1.2,
+                      1,
+                      0.98,
+                      1,
+                      0.98,
+                      1,
+                      0.98,
                       1 ])
     degree = 2
 
@@ -91,7 +98,7 @@ if __name__=='__main__':
     Curve.render()
     Curve.NURBS(weights)
     grid()
-    #savefig('prob3_1.pdf')
+    savefig('prob3_2.pdf')
     show()
 
 
