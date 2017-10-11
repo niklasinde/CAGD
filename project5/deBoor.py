@@ -56,57 +56,52 @@ class deBoor:
             plot(Y[:, 0], Y[:, 1])
 
 
-    def render(self):
-        for i, arg in enumerate(self.b):
-            if i in [1, 3, 5, 7]: scatter(*arg, c='r')
-            else: scatter(*arg, c='k')
-
+    def render(self,env = False,  alpha = 1):
+        if env == True:
+            [scatter(*arg, c='k') for arg in self.b]
 
         for i in range(self.m):
             X = linspace(self.u[i], self.u[i+1], 30)
             Y = self.eval(X, controlpoints = self.b)
 
-            plot(Y[:, 0], Y[:, 1], alpha =0.2)
+            plot(Y[:, 0], Y[:, 1], alpha =alpha)
+
+class parameters:
+    def __init__(self, points):
+        self.b = points[:, 0]
+        self.n = len(points)
+
+    def uniform(self):
+        a, b = min(self.b), max(self.b)
+        print(a, b, self.n)
+        tmp = array([a])
+        for k in range(1, self.n):
+            midpoints = lambda j: (a + j*(b - a)/(self.n - 1))
+            _tmp = midpoints(k)
+            print(_tmp)
+            tmp = append(tmp, _tmp)
+        tmp = append(tmp, b)
+        return tmp
 
 if __name__=='__main__':
-    points = array([ [0.5, 0],
-                     [0, 0],
-                     [0, 0.5],
-                     [0, 1],
-                     [0.5, 1],
-                     [1, 1],
-                     [1, 0.5],
-                     [1, 0],
-                     [0.5, 0] ])
-
-    knots = array([ 0, 0, 0, 2/9, 2/9, 4/9, 4/9, 8/9, 8/9, 1, 1, 1])
-    weights = array([ 1,
-                      1.2,
-                      1,
-                      0.98,
-                      1,
-                      0.98,
-                      1,
-                      0.98,
-                      1 ])
+    points = array([ [0,0],
+                     [6,10],
+                     [7, 10.2],
+                     [9, 8] ])
+    knots = array([ 0, 0, 0, 6, 9, 9, 9])
     degree = 2
 
-    print('nr of knots: ', len(knots), 'nr of points: ', len(points[:, 0]), 'degree: ', degree,
-            'm: ', len(points[:, 0])+degree, '|||||| nr of weights :', len(weights))
+    A = parameters(points)
+    B = A.uniform()
+    knots = array([0, 0])
+    knots = append(knots, B)
+    knots = append(knots, 9)
+    print(knots)
+    print(B)
 
     Curve = deBoor(points, knots, degree)
-    Curve.render()
-    Curve.NURBS(weights)
+    Curve.render(env = True, alpha=0.5)
+
     grid()
-    savefig('prob3_2.pdf')
+    savefig('prob4.pdf')
     show()
-
-
-
-    '''
-    points2 = array([ [0.7, -0.4], [1, -0.4], [2.5, -1.2],
-                     [3.2, -0.5], [-0.2, -0.5], [0.5, -1.2],
-                     [2, -0.4], [2.3, -0.4] ])
-
-    knots2 = array([ 1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2])
-    '''
