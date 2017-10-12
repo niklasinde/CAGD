@@ -22,7 +22,7 @@ import time as time
 
 class spline():
     """ Class to calculate a spline"""
-    def __init__(self, knot:"knotvector", k = 3, coeff = None):
+    def __init__(self, knot:"knotvector", k = 3, coeff = None): #
         if len(knot)<= k+1:
             raise SyntaxError("We need atleast k+1 number of points in the knotvector")
         self.k = k
@@ -32,7 +32,6 @@ class spline():
         else:
             self.coeff = coeff
         self.x = sm.Symbol("x")
-#        self.lastx = kn
         self.basicfunction()
 
     #### Loading functions ###
@@ -68,11 +67,10 @@ class spline():
                   div((p[i+k]-self.x),(p[i+k]-p[i+1]))*self.rec(p,i+1,k-1,xi))
             return u
 
-    def basicfunction(self):
+    def basisfunction(self):
         n1 = []
         f1 = []
         p = self.getrelpts()
-
         for i in range(len(p)):
             n2=[]
             f2 = []
