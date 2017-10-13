@@ -1,7 +1,8 @@
-%matplotlib inline
+#%matplotlib inline
 from numpy import *
 from matplotlib.pyplot import *
-from numpy.linalg import solve
+from numpy.linalg import solve, norm
+#rcParams['figure.figsize'] = 16, 4
 
 class Bspline:
     def __init__(self, points, knots, degree):
@@ -34,21 +35,46 @@ class Bspline:
         if interpolate == False: return self.b
         
         u = self.u.copy()
+        b = self.b.copy()
         N = self.run()
         M = zeros( (self.n, self.n) )
+        
+        L = lambda k: sum(norm(b[i] - b[i-1], 1)for i in range(k))\
+                      /sum(norm(b[i] - b[i-1], 1) for i in range(self.n))
+            
+        L2 = lambda k, j: sum(norm(b[i] - b[i-1], 1)for i in range(k))**j\
+                      /sum(norm(b[i] - b[i-1], 1) for i in range(self.n))**j
         
         def addBasis(row, col, value):
             M[row, col] = value
             
-        def parameter(col):
-            return u[0] + col*(u[-1] - u[0])/(self.n-1)
+        def parameter(row, style='uniform'):
+            if style == 'uniform': return uniform(row)
+            if style == 'chord': return chordlength(row)
+            if style == 'centripetal': return centripetal(row)
+            
+        def uniform(row):
+            return u[0] + row*(u[-1] - u[0])/(self.n-1)
         
-        [[addBasis(row, col, N(col, self.p)(parameter(row))) for row in range(self.n)] for col in range(self.n)]
+        def chordlength(row):
+            if row == 0: return u[0]
+            if row == self.n-1: return u[-1]
+            return u[0] + L(row)*(u[-1] - u[0])
+        
+        def centripetal(row, j = 1/2):
+            if row == 0: return u[0]
+            if row == self.n-1: return u[-1]
+            return u[0] + L2(row, j)*(u[-1] - u[0])
+        
+        [[addBasis(row, col, N(col, self.p)(parameter(row, style=self.style)))
+          for row in range(self.n)]
+         for col in range(self.n)]
         
         X, Y = solve(M, self.b[:, 0]), solve(M, self.b[:, 1])
         return array(list( [X[i], Y[i]] for i in range(self.n) ))
 
-    def evaluate(self, interpolate=False, t=False, nsp=100):
+    def evaluate(self, interpolate=False, t=False, nsp=100, style='uniform'):
+        self.style = style
         b = self.b.copy()
         N = self.run()
         
@@ -64,17 +90,23 @@ class Bspline:
         
         
 
-#for args in points: scatter(*args, c='k')
-#plot(Y[:, 0], Y[:, 1], c='k')
+#import time as time
 
-import time as time
-
-t0 = time.time()
-knots = np.array([0, 0, 0, 3, 6, 6, 6])
+#t0 = time.time()
+knots = np.array([0, 0, 0, 0.5, 1, 1, 1])
 points = np.array([ [0, 0], [6, 10], [7, 10.2], [9, 8] ])
 C = Bspline(points, knots, 2)
-Y = C.evaluate(interpolate=True)
-plot(Y[:, 0], Y[:, 1], c='k')
-show()
-print(time.time()-t0,"time")
+Y = C.evaluate(interpolate=True, style='uniform')
+plot(Y[:, 0], Y[:, 1], c='k', alpha=0.5)
 
+Y = C.evaluate(interpolate=True, style='chord')
+plot(Y[:, 0], Y[:, 1], c='b', alpha=0.5)
+
+Y = C.evaluate(interpolate=True, style='centripetal')
+plot(Y[:, 0], Y[:, 1], c='g', alpha=0.5)
+
+for args in points: scatter(*args, c='k')
+
+grid()
+savefig('task4_2.pdf')
+#print(time.time()-t0,"time")
