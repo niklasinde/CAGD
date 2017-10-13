@@ -66,49 +66,6 @@ class DeBoor:
         plt.scatter(control[:,0],control[:,1])
         plt.show()
 
-class Spline2:
-    def __init__(self, knot, k=3, coeff = None):
-        if len(knot) <= k + 1:
-            raise SyntaxError("We need atleast k+1 number of points in the knotvector , now you have "+str(len(knot
-                                                                                                        ))+" and you need "+str(k+1))
-        if sorted(knot) != knot:
-            raise Exception("knot needs to be sorted.")
-        self.k = k # degree of basis spline
-        self.knot = knot
-        print(len(self.knot) - self.k )
-        if not type(coeff) == np.ndarray:
-            self.coeff = [1 for i in range(len(self.knot) - self.k )]
-        else:
-            self.coeff = coeff
-        
-        
-    def rec(self,t,i,k):
-        if k == 1:
-            if self.knot[i] == self.knot[i + 1]:
-                return 0
-            if self.knot[i] <= t <= self.knot[i + 1]:
-                return 1
-            else:
-                return 0
-        else:
-            def div(lhs, rhs):
-                if rhs == 0:
-                    return 0
-                else:
-                    return lhs / rhs
-            u = (div((t - self.knot[i]), (knot[i + k - 1] - self.knot[i])) * self.rec(t, i, k - 1) +
-                 div((self.knot[i + k] - t), (self.knot[i + k] - self.knot[i + 1])) * self.rec(t, i + 1, k - 1))
-            return u
-        
-    def __call__(self,t):
-        print(self.k)
-        y = [self.coeff[i]*self.rec(t, i,self.k) for i in range(len(self.knot)-self.k)]
-        return sum(y)
-    def rendervec(self):
-        x = np.linspace(self.knot[0],self.knot[-1],100)
-        y = [self.__call__(t) for t in x]
-        plt.plot(x,y)
-        plt.show()
 
 
 class Spline:
@@ -132,7 +89,6 @@ class Spline:
 
 
         self.N, self.F = self.basisfunction(self.points)
-        print(len(self.N), len(knot) - self.k - 1,"len spline")
         if not type(coeff) == np.ndarray:
             self.coeff = [1 for i in range(len(self.N))]
         else:
@@ -320,7 +276,7 @@ class Spline:
         y_list = np.array(y_list)
         return y_list
 
-    def render_vector(self, control, interpoints = None):
+    def render_vector(self, control, interpoints = None,pts = 30):
         """
         plots eval_vector with different colors in each segment
         """
@@ -330,11 +286,11 @@ class Spline:
         for i in range(len(knot)-1):
 
             if not (fullSupport(knot,knot[i], self.k) and fullSupport(knot, knot[i+1], self.k)):
-                X = np.linspace(knot[i],knot[i+1],30)
+                X = np.linspace(knot[i],knot[i+1],pts)
                 Y = self.eval_vector(control,X)
                 plt.plot(Y[:, 0],Y[:, 1], color = "black",linewidth=2)
             else:
-                X = np.linspace(knot[i],knot[i+1],30)
+                X = np.linspace(knot[i],knot[i+1],pts)
                 Y = self.eval_vector(control,X)
                 plt.plot(Y[:, 0],Y[:, 1],linewidth=2)
         if np.array(interpoints).shape != ():
@@ -343,7 +299,7 @@ class Spline:
             plt.scatter(interpoints[:,0],interpoints[:,1],color = "black")
         else:
             plt.scatter(control[:, 0],control[:, 1])
-#        plt.show()
+        plt.show()
         
     
     def eval_basis(self, x, i):
@@ -372,76 +328,7 @@ class Spline:
                 print("You dont have full support")
                 return(False)
         return True
-      
-
-#knot=[0, 0, 1, 1, 2, 2]
-#k = 2
-#A = Spline2(knot,k=k)
-#A.rendervec()
-#B = Spline(knot,k=k)
-#B.plotsum()
-
-
-
-# Task 1
-#knot = [0,0,0,0,0,1,2,3,4,5,6,7,8,8,8,8,8]
-#control = np.array([[4,0], [2,1], [2,1], [8,10], [4,2],
-#                    [10,0],[5,-1],[4,-7],[2,-4],[2,1],[-1,2],[10,10]])
-#control2 = np.array([[4,0], [2,1], [2,1], [8,10], [4,2],
-#                    [5,0],[5,-1],[4,-7],[2,-4],[2,1],[-1,2],[10,10]])
-#A = Spline(knot, k=4, coeff=control[:,0])
-#B = Spline(knot, k=4, coeff=control2[:,0])
-#
-#O = Spline(knot, k=4)
-##O.basisplot()
-##plt.savefig("bajs.pdf")
-#
-#A.basisplot()
-#plt.savefig("Basis1.pdf")
-#plt.show()
-##
-#B.basisplot()
-#plt.savefig("Basis2.pdf")
-#plt.show()
-#A.render_vector(control)
-#plt.savefig("Interpol1.pdf")
-#plt.show()
-#A.render_vector(control2)
-#plt.savefig("Interpol2.pdf")
-#plt.show()
-        
-    
-# Task 5
-#knot = [0, 1/11, 2/11, 3/11, 4/11, 5/11, 6/11, 7/11, 8/11, 9/11, 10/11, 1]
-#control = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [9,-1]]) 
-##control2 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [0,0]]) 
-##control3 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [0,0],[9,1]]) 
-##control4 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [0,0], [3,1],[9,1]]) 
-##
-#A = Spline(knot,k=3,coeff = control[:,0])
-#A.render_vector(control)
-##plt.savefig("Task51.pdf")
-#plt.show()
-#A.basisplot()
-##plt.savefig("Task51basis.pdf")
-#plt.show()
-#
-#B = Spline(knot,k=3)
-#B.render_vector(control2)
-#plt.savefig("Task52.pdf")
-#plt.show()
-#
-#B = Spline(knot,k=3)
-#B.render_vector(control3)
-#plt.savefig("Task53.pdf")
-#plt.show()
-#
-#B = Spline(knot,k=3,coeff = control4[:,0])
-#B.render_vector(control4)
-#plt.savefig("Task54.pdf")
-#plt.show()
-
-
+  
 class Interpolation:
     def __init__(self, knot, x, y, k=3):
         self.k = k
@@ -455,7 +342,7 @@ class Interpolation:
         if self.interx.shape[1] != len(self.N.N):
             raise Exception("Now we have {} basis functions, and {} interpolation points".format(len(self.N.N),self.interx.shape[1]))
         self.coeff = self.getcoefficients()
-        self.A = self.__get_a_matrix()
+
     def check_support(self):
         FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
         OverSupport = lambda knot, t, deg: (knot[0] == knot[deg+1] or knot[-1] == knot[-deg-2])
@@ -483,8 +370,9 @@ class Interpolation:
         return A
     
     def getcoefficients(self):
-        xcoeff = self.__solve(self.interx).reshape((len(self.N.N)))
-        ycoeff = self.__solve(self.intery).reshape((len(self.N.N)))
+        self.A = self.__get_a_matrix()
+        xcoeff = self.__solve(self.A,self.interx).reshape((len(self.N.N)))
+        ycoeff = self.__solve(self.A,self.intery).reshape((len(self.N.N)))
         xy = np.empty((xcoeff.shape[0], 2))
 #        print(xy,"xy",np.shape(ycoeff))
 #        print(xcoeff,"xcoeff")
@@ -492,9 +380,9 @@ class Interpolation:
         xy[:, 1] = ycoeff
         xy[:, 0] = xcoeff
         return(xy)
-    def __solve(self,b):
-        self.A = self.__get_a_matrix()
-        return np.linalg.solve(self.A,b.T)
+    def __solve(self,a,b):
+#        self.A = self.__get_a_matrix()
+        return np.linalg.solve(a,b.T)
     
     def x(self, x):
         return (self.splinex.evalfull(x))
@@ -537,23 +425,20 @@ class Interpolation:
 #print(unipoints(0,1,s,k+1))
 #
 import time as time
-t0 = time.time()
+
+t1 = 0
+iterations = 50
+
 xy = np.array([[0,0],[6,10],[7,10.2],[9,8]])
 x = [x[0] for x in xy]
 y = [x[1] for x in xy]
 k = 3
-
 knot = [0,0,0,0,6,6,6,6]
-#A = Spline(knot,k = k)
-#A.basisplot()
-#plt.show()
-#A.plotsum()
-
 B = Interpolation(knot,x,y,k=k)
+
+t0 = time.time()   
+
 B.plotinter()
 plt.show()
-print(time.time()-t0,"time")
 
-#B.plotbasis()
-##
-
+t1 += time.time()-t0
