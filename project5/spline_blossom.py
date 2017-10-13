@@ -544,10 +544,10 @@ y = [x[1] for x in xy]
 k = 3
 
 knot = [0,0,0,0,6,6,6,6]
-A = Spline(knot,k = k)
-A.basisplot()
-plt.show()
-A.plotsum()
+#A = Spline(knot,k = k)
+#A.basisplot()
+#plt.show()
+#A.plotsum()
 
 B = Interpolation(knot,x,y,k=k)
 B.plotinter()
