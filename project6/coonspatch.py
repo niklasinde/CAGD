@@ -7,9 +7,13 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 class Bezier:
-    def __init__(self, points, domain=False):
+    def __init__(self, points, domain=(0,1)):
         self.b, self.n = points, len(points)-1
-        self.domain = (min(points[:,0]), max(points[:, 0])) if domain == False else domain
+        self.domain = domain
+        self.basis  = self.__run()
+
+    def __call__(self, s):
+        return self.basis(s)
 
     def __run(self):
         c1 = lambda t: (self.domain[-1] - t)/self.domain[-1] if self.domain[-1] != 0 else 0
@@ -22,7 +26,7 @@ class Bezier:
         return B(0, self.n)
 
     def evaluate(self, nsp=100):
-        basis  = self.__run()
+        basis  = self.basis
         sample = linspace(self.domain[0], self.domain[-1], nsp)
 
         return array(list( basis(x) for x in sample ))
@@ -36,55 +40,49 @@ class Bezier:
 
 
 class surface:
-    def __init__(self, points1, points2, points3, points4):
+    def __init__(self, points1, points2, points3, points4, domain=(0,1)):
         ''' points1, points2 are on the same axis, and
             points3, points4 are on the same axis.
         '''
         self.b1, self.b2, self.b3, self.b4 = points1, points2, points3, points4
-        self.n = len(self.b1[0, :]); self.m = len(self.b1[:, 0])
+        self.domain = domain
+        _ = self.domain
+        self.c0, self.c1, self.d0, self.d1 = Bezier(points1, domain=_),\
+                                             Bezier(points2, domain=_),\
+                                             Bezier(points3, domain=_),\
+                                             Bezier(points4, domain=_)
+        self.C = self.__run()
 
-    def getPoints(self):
-        n, m = self.n-1, self.m-1
+    def __run(self):
+        _p = lambda t: (self.domain[-1] - t)/self.domain[-1] if self.domain[-1] != 0 else 0
+        _q = lambda t: (t - self.domain[0])/(self.domain[-1] - self.domain[0])\
+                       if (self.domain[-1] - self.domain[0]) != 0 else 0
 
-        def getbu(M):
-            return lambda i, j: (1 - i/m)*M[0, j] + i/m*M[m, j]
 
-        def getbv(M):
-            return lambda i, j: (1 - i/m)*M[i, 0] + i/m*M[i, m]
+        Lc = lambda s, t: _p(t)*self.c1(s) + _q(t)*self.c0(s)
+        Ld = lambda s, t: _p(s)*self.d0(t) + _q(s)*self.d1(t)
+        B  = lambda s, t: self.c1(0)*_p(s)*_p(t)\
+                          + self.c1(1)*_q(s)*_p(t)\
+                          + self.c0(0)*_p(s)*_q(s)\
+                          + self.c0(1)*_q(s)*_q(s)
 
-        def getbuv(M):
-            def tmp(i,j):
-                q = array([1-i/m, i/m])
-                w = array([ [M[0,0], M[0,m]], [M[m,0], M[m,m]] ])
-                r = array([ [1-i/m], [i/m] ])
+        return lambda s, t: Lc(s, t) + Ld(s, t) - B(s, t)
 
-                return dot( dot(q, w), r)
+    def evaluate(self, nsp=30):
+        X = linspace(self.domain[0], self.domain[1], nsp)
+        Y = linspace(self.domain[0], self.domain[1], nsp)
 
-            return tmp
+        XY = lambda _: array(list( list( self.C(x, y) for x in X ) for y in Y ))
+        YX = lambda _: array(list( list( self.C(y, x) for x in X ) for y in Y ))
 
-        def tmp(axis):
-            p1, p2, p3, p4 = self.b1, self.b2, self.b3, self.b4
-            M = zeros( (self.m, self.m) )
+        return XY(0), YX(0)
 
-            M[0,:]  = p1[:, axis]
-            M[-1,:] = p2[:, axis]
-
-            M[:,0]  = p3[:, axis]
-            M[:,-1] = p4[:, axis]
-
-            bu, bv, buv = getbu(M), getbv(M), getbuv(M)
-
-            def b(i,j):
-                M[i, j] = bu(i, j) + bv(i, j) + buv(i, j)
-
-            [[b(j, i) for i in range(1,m)] for j in range(1,m)]
-
-            return M
-
-        points = tmp(idx)
-        Bezier(points, domain=(0,3))
-        B.render()
-
+    def render(self):
+        XY, YX = self.evaluate()
+        for Y in XY:
+            ax.plot(xs = Y[:, 0], ys = Y[:, 1], zs = Y[:,2], alpha=0.5, c='k')
+        for Y in YX:
+            ax.plot(xs = Y[:, 0], ys = Y[:, 1], zs = Y[:,2], alpha=0.5, c='k')
 
 
 
@@ -93,13 +91,23 @@ p2 = array([ [0,3,0], [1,3,1], [2,3,1], [3,3,0] ])
 p3 = array([ [0,0,0], [0,1,1], [0,2,-3], [0,3,0] ])
 p4 = array([ [3,0,0], [3,1,1], [3,2,1], [3,3,0] ])
 
+#p1 = array([ [0,0,0], [1/3,0,1/3], [2/3,0,1/3], [3/3,0,0] ])
+#p2 = array([ [0,3/3,0], [1/3,3/3,1/3], [2/3,3/3,1/3], [3/3,3/3,0] ])
+#p3 = array([ [0,0,0], [0,1/3,1/3], [0,2/3,-3/3], [0,3/3,0] ])
+#p4 = array([ [3/3,0,0], [3/3,1/3,1/3], [3/3,2/3,1/3], [3/3,3/3,0] ])
+
+
 lista = (p1, p2, p3, p4)
+domain = (0, 3)
 
-C = surface(p1, p2, p3, p4)
-C.getPoints()
+C = surface(*lista, domain)
+C.render()
 
-#for arg in lista:
-#    C = Bezier(arg, domain=(0, 3) )
-#    C.render()
 
-#plt.show()
+
+
+for arg in lista:
+    C = Bezier(arg, domain )
+    C.render()
+
+plt.show()
