@@ -87,16 +87,14 @@ class surface:
         for bez in (self.c0, self.c1, self.d0, self.d1):
             bez.render()
 
+if __name__=='__main__':
+    p1 = array([ [0,0,0], [1,0,1], [2,0,1], [3,0,0] ])
+    p2 = array([ [0,3,0], [1,3,1], [2,3,1], [3,3,0] ])
+    p3 = array([ [0,0,0], [0,1,1], [0,2,-3], [0,3,0] ])
+    p4 = array([ [3,0,0], [3,1,1], [3,2,1], [3,3,0] ])
 
-p1 = array([ [0,0,0], [1,0,1], [2,0,1], [3,0,0] ])
-p2 = array([ [0,3,0], [1,3,1], [2,3,1], [3,3,0] ])
-p3 = array([ [0,0,0], [0,1,1], [0,2,-3], [0,3,0] ])
-p4 = array([ [3,0,0], [3,1,1], [3,2,1], [3,3,0] ])
+    lista = (p1, p2, p3, p4)
+    domain = (0, 1)
 
-lista = (p1, p2, p3, p4)
-domain = (0, 1)
-
-C = surface(*lista, domain)
-C.render()
-
-plt.show()
+    C = surface(*lista, domain)
+    C.render()
