@@ -35,7 +35,7 @@ class Bezier:
         Y = self.evaluate()
         ax.plot(xs = Y[:, 0], ys = Y[:, 1], zs = Y[:,2])
 
-        for arg in self.b: ax.scatter(*arg, c='k')
+        for arg in self.b: ax.scatter(*arg, c='k', alpha=0.2)
         ax.plot(self.b[:, 0], self.b[:, 1], self.b[:,2], alpha=0.2, c='k')
 
 
@@ -84,17 +84,39 @@ class surface:
             ax.plot(xs = Y[:, 0], ys = Y[:, 1], zs = Y[:,2], alpha=0.5, c='k')
 
 
-        for bez in (self.c0, self.c1, self.d0, self.d1):
-            bez.render()
+        #for bez in (self.c0, self.c1, self.d0, self.d1):
+        #    bez.render()
 
 if __name__=='__main__':
-    p1 = array([ [0,0,0], [1,0,1], [2,0,1], [3,0,0] ])
-    p2 = array([ [0,3,0], [1,3,1], [2,3,1], [3,3,0] ])
-    p3 = array([ [0,0,0], [0,1,1], [0,2,-3], [0,3,0] ])
-    p4 = array([ [3,0,0], [3,1,1], [3,2,1], [3,3,0] ])
+    #p1 = array([ [0,0,0], [1,0,1], [2,0,1], [3,0,0] ])
+    #p2 = array([ [0,3,0], [1,3,1], [2,3,1], [3,3,0] ])
+    #p3 = array([ [0,0,0], [0,1,1], [0,2,-3], [0,3,0] ])
+    #p4 = array([ [3,0,0], [3,1,1], [3,2,1], [3,3,0] ])
+
+    p1 = array([ [0,0,0], [-2,-2,1] ])
+    p2 = array([ [-2,-2,1], [0,1,0] ])
+    p3 = array([ [-2,-2,1], [1,0,0] ])
+    p4 = array([ [0,1,0], [2,2,1]])
+
+
+    p1 = array([ [0,0,0], [1/2, 1/2, 1], [2,2,1] ])
+    p2 = array([ [-2,-2,1], [1/2, 1/2, 1], [0,1,0] ])
+    p3 = array([ [-2,-2,1], [1/2, 1/2, 1], [1,0,0] ])
+    p4 = array([ [0,1,0], [1/2, 1/2, 1], [2,2,1] ])
+
+
+    points = array([ [-2,-2,1], [2,2,1], [1,0,0], [0,1,0], [1/2, 1/2, 1] ])
+    for arg in points: ax.scatter(*arg, c='r', alpha =0.5)
+    #ax.scatter(1, 0, 0, c='r')
+    #ax.scatter(0, 1, 0, c='b')
+    #ax.scatter(-2, -2, 1, c='g')
+
+
+
 
     lista = (p1, p2, p3, p4)
     domain = (0, 1)
 
     C = surface(*lista, domain)
     C.render()
+    plt.show()
