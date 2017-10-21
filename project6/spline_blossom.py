@@ -433,15 +433,13 @@ class Surface:
 #        print(ret)
         return(ret[0])
 
-    def plot(self, pts = 200):
+    def plot(self, pts = 200,color = "black"):
         X, Y = np.meshgrid(np.linspace(self.knotsu[0], self.knotsu[-1], pts),
                             np.linspace(self.knotsv[0], self.knotsv[-1], pts))
         self.X1 = self.Y1 = self.Z1 = np.zeros_like(X)
 #        print(X.shape)
 #        print(self.X1.shape)
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        
+
         for col in range(pts):
             tmp = []
             tmp2 = []
@@ -454,16 +452,16 @@ class Surface:
             tmp2 = np.array(tmp2)
             tmp = np.array(tmp)
 #            print(tmp2)
-
-            ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c="black")
-            ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c="black")
-#            ax.set_xlim3d(0, 1)
-#            ax.set_ylim3d(0, 1)
-#            ax.set_zlim3d(0, 1)
+#            ax.axis("equal")
+            ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c=color)
+            ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c=color)
+#            ax.set_xlim3d(, 2)
+#            ax.set_ylim3d(-1, 1)
+#            ax.set_zlim3d(0, 2)
         
 #        plt.contourf(X, Y, self.Z1)
-#        ax.axis("equal")
-        plt.show()
+
+#        plt.show()
 #        return(X,Y)
 
 controlnet = np.array([[0.7, -0.4],
@@ -489,8 +487,8 @@ def func(ctr, r):
 knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 
 
-sur = Surface(func(controlnet,0.1), knotsu, knotsv, 3)
-sur.plot(pts = 50)
+#sur = Surface(func(controlnet,0.1), knotsu, knotsv, 3)
+#sur.plot(pts = 50)
 #
 #
 #a = func(controlnet,0.1)
@@ -504,7 +502,7 @@ sur.plot(pts = 50)
 ##
 #pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
 ##
-#for pt in pts:
+ #for pt in pts:
 #    ax.scatter(pt[0], pt[1], pt[2], c="black")
 #    for pt2 in pts:
 #        if pt != pt2:
@@ -518,30 +516,30 @@ sur.plot(pts = 50)
 
 
 pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
-pts2 = pts[:]
-controlnet = list()
-delpoint = list()
-for i,pt in enumerate(pts):
-    for pt2 in pts2:
-        if pt != pt2 and pt not in delpoint:
-#            print(pt,pt2)
 
-            controlnet.append(np.array([pt,pt2]))
-    delpoint.append(pt)
-    pts.pop(i)
-controlnet = np.array(controlnet)
+
+controlnet = np.array([
+                        [[-2,-2,1],[1/2, 1/2, 1]],[[-2,-2,1], [0, 1, 0]],
+                        [[2,2,1], [1/2, 1/2, 1]],[[2,2,1],[1, 0, 0]],
+                        [[2,2,1],[1/2, 1/2, 1]],[[2,2,1], [0, 1, 0]],
+                        [[-2,-2,1], [1/2, 1/2, 1]],[[-2,-2,1],[1, 0, 0]],
+                        [[-2,-2,1],[1, 0, 0]],[[-2,-2,1], [0, 1, 0]],
+                        [[2,2,1],[1, 0, 0]],[[2,2,1], [0, 1, 0]]
+                        ])
 #pts = list()
 knotsu = knotsv = [0,0,1,1]
 #s = Spline(knotsu,k = 1)
 ##s.basisplot()
 #pts2 = pts = np.array([[[-2,-2,1], [2,2,1]],[[-2,-2,1], [1, 0, 0]]])
-#fig = plt.figure()
-#ax = fig.add_subplot(111, projection='3d')
-        
-#for i in range(controlnet.shape[0]-1):
-#    sur = Surface(controlnet[i:i+2], knotsu, knotsv, 1)
-#    sur.plot(pts = 30)
-#plt.show()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+color = ["red","black","blue","orange","green","yellow"]
+for i in range(controlnet.shape[0]//2):
+#    print("hej")
+#    print(controlnet[i*2:(i*2)+2])
+    sur = Surface(controlnet[i*2:i*2+2], knotsu, knotsv, 1)
+    sur.plot(pts = 30,color =color[i] )
+plt.show()
 #    
 
 #
