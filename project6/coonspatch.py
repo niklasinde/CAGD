@@ -54,16 +54,12 @@ class surface:
         self.C = self.__run()
 
     def __run(self):
-        _p = lambda t: (1-t)
-        _q = lambda t: t
-
-
-        Lc = lambda s, t: _p(t)*self.c1(s) + _q(t)*self.c0(s)
-        Ld = lambda s, t: _p(s)*self.d0(t) + _q(s)*self.d1(t)
-        B  = lambda s, t: self.c1(0)*_p(s)*_p(t)\
-                          + self.c1(1)*_q(s)*_p(t)\
-                          + self.c0(0)*_p(s)*_q(s)\
-                          + self.c0(1)*_q(s)*_q(t)
+        Lc = lambda s, t: (1-t)*self.c1(s) + t*self.c0(s)
+        Ld = lambda s, t: (1-s)*self.d0(t) + s*self.d1(t)
+        B  = lambda s, t: self.c1(0)*(1-s)*(1-t)\
+                          + self.c1(1)*s*(1-t)\
+                          + self.c0(0)*(1-s)*t\
+                          + self.c0(1)*s*t
 
         return lambda s, t: Lc(s, t) + Ld(s, t) - B(s, t)
 
@@ -84,8 +80,8 @@ class surface:
             ax.plot(xs = Y[:, 0], ys = Y[:, 1], zs = Y[:,2], alpha=0.5, c='k')
 
 
-        #for bez in (self.c0, self.c1, self.d0, self.d1):
-        #    bez.render()
+        for bez in (self.c0, self.c1, self.d0, self.d1):
+            bez.render()
 
 if __name__=='__main__':
     #p1 = array([ [0,0,0], [1,0,1], [2,0,1], [3,0,0] ])
@@ -98,20 +94,22 @@ if __name__=='__main__':
     p3 = array([ [-2,-2,1], [1,0,0] ])
     p4 = array([ [0,1,0], [2,2,1]])
 
-
-    p1 = array([ [0,0,0], [1/2, 1/2, 1], [2,2,1] ])
+    p1 = array([ [1,0,0], [1/2, 1/2, 1], [2,2,1] ])
     p2 = array([ [-2,-2,1], [1/2, 1/2, 1], [0,1,0] ])
     p3 = array([ [-2,-2,1], [1/2, 1/2, 1], [1,0,0] ])
     p4 = array([ [0,1,0], [1/2, 1/2, 1], [2,2,1] ])
 
+    p1 = array([ [0,0,0], [1,0,1], [2,0,1], [3,0,0] ])
+    p2 = array([ [0,3,0], [1,3,1], [2,3,1], [3,3,0] ])
+    p3 = array([ [0,0,0], [0,1,1], [0,2,-3], [0,3,0] ])
+    p4 = array([ [3,0,0], [3,1,1], [3,2,1], [3,3,0] ])
 
-    points = array([ [-2,-2,1], [2,2,1], [1,0,0], [0,1,0], [1/2, 1/2, 1] ])
-    for arg in points: ax.scatter(*arg, c='r', alpha =0.5)
+
+    #points = array([ [-2,-2,1], [2,2,1], [1,0,0], [0,1,0], [1/2, 1/2, 1] ])
+    #for arg in points: ax.scatter(*arg, c='r', alpha =0.5)
     #ax.scatter(1, 0, 0, c='r')
     #ax.scatter(0, 1, 0, c='b')
     #ax.scatter(-2, -2, 1, c='g')
-
-
 
 
     lista = (p1, p2, p3, p4)
