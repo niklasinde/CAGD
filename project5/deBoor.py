@@ -103,5 +103,5 @@ if __name__=='__main__':
     Curve.render(env = True, alpha=0.5)
 
     grid()
-    savefig('prob4.pdf')
+    #savefig('prob4.pdf')
     show()
