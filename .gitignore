@@ -4,3 +4,5 @@ Casteljau.py
 *.xml
 
 *.iml
+
+.DS_Store
