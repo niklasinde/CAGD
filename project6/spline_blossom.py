@@ -439,8 +439,8 @@ class Surface:
         self.X1 = self.Y1 = self.Z1 = np.zeros_like(X)
 #        print(X.shape)
 #        print(self.X1.shape)
-#        fig = plt.figure()
-#        ax = fig.add_subplot(111, projection='3d')
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
         
         for col in range(pts):
             tmp = []
@@ -458,12 +458,12 @@ class Surface:
             ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c="black")
             ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c="black")
 #            ax.set_xlim3d(0, 1)
-#            ax.set_ylim3d(0,1)
-#            ax.set_zlim3d(0,1)
-
+#            ax.set_ylim3d(0, 1)
+#            ax.set_zlim3d(0, 1)
+        
 #        plt.contourf(X, Y, self.Z1)
 #        ax.axis("equal")
-#        plt.show()
+        plt.show()
 #        return(X,Y)
 
 controlnet = np.array([[0.7, -0.4],
@@ -489,15 +489,15 @@ def func(ctr, r):
 knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 
 
-#sur = Surface(func(controlnet,0.1), knotsu, knotsv, 3)
-#sur.plot(pts = 50)
+sur = Surface(func(controlnet,0.1), knotsu, knotsv, 3)
+sur.plot(pts = 50)
 #
 #
 #a = func(controlnet,0.1)
 #plt.show()
-
-
-
+#
+#
+#
 #
 #fig = plt.figure()
 #ax = fig.add_subplot(111, projection='3d')
@@ -509,13 +509,13 @@ knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 #    for pt2 in pts:
 #        if pt != pt2:
 #            ax.plot((pt[0],pt2[0]),(pt[1],pt2[1]),(pt[2],pt2[2]))
-
-ax.set_xlabel('X Label')
-ax.set_ylabel('Y Label')
-ax.set_zlabel('Z Label')
-#plt.savefig("task4.pdf")
-plt.show()
 #
+#ax.set_xlabel('X Label')
+#ax.set_ylabel('Y Label')
+#ax.set_zlabel('Z Label')
+#plt.savefig("task4.pdf")
+#plt.show()
+
 
 pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
 pts2 = pts[:]
@@ -535,15 +535,14 @@ knotsu = knotsv = [0,0,1,1]
 #s = Spline(knotsu,k = 1)
 ##s.basisplot()
 #pts2 = pts = np.array([[[-2,-2,1], [2,2,1]],[[-2,-2,1], [1, 0, 0]]])
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+#fig = plt.figure()
+#ax = fig.add_subplot(111, projection='3d')
         
-for i in range(controlnet.shape[0]-1):
-#    print(controlnet[i:i+2],"hej")
-    sur = Surface(controlnet[i:i+2], knotsu, knotsv, 1)
-    sur.plot(pts = 30)
-plt.show()
-    
+#for i in range(controlnet.shape[0]-1):
+#    sur = Surface(controlnet[i:i+2], knotsu, knotsv, 1)
+#    sur.plot(pts = 30)
+#plt.show()
+#    
 
 #
 #
