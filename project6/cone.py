@@ -36,31 +36,25 @@ class Bspline:
 
         return N
 
-    def evaluate(self, controlpoints, nsp=10):
-        b           = controlpoints
+    def evaluate(self, controlpoints, nsp=20):
         N           = self.getBasisGenerator()
-        basisvector = array(list( N(i, self.p) for i in range(len(self.u) - self.p - 1) ))
+        basisvector = array(list( N(i, self.p)
+                                  for i in range(len(self.u) - self.p - 1) ))
 
-        n = self.n
-        a  = list( i/n*2*pi for i in range(n+1) )
-        polar = array(list( [sin(alpha), 0, 0, 0] for alpha in a))
-        print(polar)
+        getInnerPoints = lambda x: sum( controlpoints[i]*basis(x)
+                                        for i,basis in enumerate(basisvector) )
 
-        getInnerPoints = lambda x: sum( (self.b[i]+polar[i])*basis(x)
-                                  for i,basis in enumerate(basisvector) )
-
-        getValue = lambda x, y: sum( getInnerPoints(x)*self.b[i]*basis(y)
-                                  for i,basis in enumerate(basisvector) )
+        getValue       = lambda x, y: sum( getInnerPoints(x)*basis(y)
+                                           for i,basis in enumerate(basisvector) )
 
         sample = linspace(self.u[0], self.u[-1], nsp)
-        return array(list( list(getValue(x, y) for x in sample ) for y in sample )),\
-               array(list( list(getValue(y, x) for x in sample ) for y in sample ))
+        return array(list( list(getValue(x, y) for x in sample ) for y in sample ))
 
 
     def NURBS(self, weights):
-        def step1():
+        def step1(points):
             return  array(list( weights[i]*append(x, 1)
-                               for i,x in enumerate(self.b.copy()) ))
+                               for i,x in enumerate(points) ))
 
         def step2(obj, tmp):
             return obj.evaluate(controlpoints = tmp)
@@ -68,34 +62,50 @@ class Bspline:
         def step3(fx):
             return array(list( y[:-1]*y[-1] for y in fx ))
 
-        extended_points = step1()
-        tmp_object      = Bspline(extended_points, self.u, self.p)
+        for points in self.b:
+            extended_points = step1(points)
+            tmp_object      = Bspline(extended_points, self.u, self.p)
 
-        Horizontal, Vertical = step2(tmp_object, extended_points)
-        YX = list( step3( _ ) for _ in Horizontal )
-        XY = list( step3( _ ) for _ in Vertical )
+            YX = step2(tmp_object, extended_points)
 
-        list( ax.plot(Y[:, 0], Y[:, 1], Y[:, 2], c='k', alpha=0.5)
-              for Y in YX )
-        list( ax.plot(Y[:, 0], Y[:, 1], Y[:, 2], c='k', alpha=0.5)
-              for Y in XY)
+            list( ax.plot(Y[:, 0], Y[:, 1], Y[:, 2], c='k', alpha=0.5)
+                  for Y in YX )
 
-
-
-knots   = np.array([0, 0, 0, 1/2, 1, 1, 1])
+knots   = np.array([0, 0, 0, 0,
+                    1/6, 2/6, 3/6, 4/6,
+                    1, 1, 1, 1])
 
 points  = np.array([ [0, 0, 0],
-                     [0, 0.5, 0],
-                     [0, 0.7, 0],
-                     [0, 1, 0],
-                     ])
+                     [0, 0, 1],
+                     [0, 0, 2],
+                     [0, 0, 3],
+                     [0, 0, 4],
+                     [0, 0, 5],
+                     [0, 0, 6],
+                     [0, 0, 7],
+                      ])
 
-weights = array([ 1, 1, 1,
-                  1])
+weights = array([ 0.78, 1, 1, 1,
+                  1, 1, 1, 0.78])
 
-C = Bspline(points, knots, 2)
+def func(ctr, r):
+    A = zeros( (8,8,3) )
+    def a(j): return (j/7)*2*np.pi
+    for i in range(8):
+        w = 1 - i/7
+        for j in range(8):
+            A[i, j, 0] = w*r*sin(a(j))
+            A[i, j, 1] = w*r*cos(a(j))
+            A[i, j, 2] = ctr[i, 2]
 
+    return A
+
+#for cluster in func(points, 0.1):
+#    for pt in cluster: ax.scatter(*pt, c='k')
+
+C = Bspline(func(points, 1), knots, 3)
+#print(func(points,1))
 C.NURBS(weights)
 
-for args in points: ax.scatter(*args, c='r')
+#for args in points: ax.scatter(*args, c='r')
 plt.show()
