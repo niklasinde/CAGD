@@ -43,9 +43,10 @@ class Bspline:
 
         n = self.n
         a  = list( i/n*2*pi for i in range(n+1) )
-        self.polar = array(list( [sin(alpha), 0, 0, 0] for alpha in a))
+        polar = array(list( [sin(alpha), 0, 0, 0] for alpha in a))
+        print(polar)
 
-        getInnerPoints = lambda x: sum( (self.b[i]+self.polar[i])*basis(x)
+        getInnerPoints = lambda x: sum( (self.b[i]+polar[i])*basis(x)
                                   for i,basis in enumerate(basisvector) )
 
         getValue = lambda x, y: sum( getInnerPoints(x)*self.b[i]*basis(y)
@@ -81,25 +82,16 @@ class Bspline:
 
 
 
-knots   = np.array([0, 0, 0,
-                    1/9, 2/9, 3/9,
-                    4/9, 5/9, 6/9,
-                    1, 1, 1])
+knots   = np.array([0, 0, 0, 1/2, 1, 1, 1])
 
-points  = np.array([ [0.5, 0, 0.5],
-                     [0, 0, 0.5],
-                     [0, 0.5, 0.5],
+points  = np.array([ [0, 0, 0],
+                     [0, 0.5, 0],
+                     [0, 0.7, 0],
                      [0, 1, 0],
-                     [0.5, 1, 0],
-                     [1, 1, 0],
-                     [1, 0.5, 0],
-                     [1, 0, 0],
-                     [0.5, 0, 0]
                      ])
 
 weights = array([ 1, 1, 1,
-                  1, 1, 1,
-                  1, 1, 1, 1, 1, 1])
+                  1])
 
 C = Bspline(points, knots, 2)
 
