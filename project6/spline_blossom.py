@@ -259,7 +259,7 @@ class Spline:
             raise Exception("You need " + str(len(self.N)) + " controlpoints. Now you have " + str(len(control)))
         y_list = []
         if np.shape(np.array(x)) != ():
-            return [self.eval_vector(x_i) for x_i in x]
+            return np.array([self.eval_vector(control,x_i)[0] for x_i in x])
 
         hi = self.hotinterval(x)
         func_val = np.zeros(control.shape[1])
@@ -371,9 +371,10 @@ class Interpolation:
         return True
               
     def get_t_points(self):
-        a, b,s = self.knot[0],self.knot[-1],len(self.N.N)
-        
-        return list(a+ k *(b-a)/s for k in range(len(self.N.N)))
+        a, b,s = self.knot[0],self.knot[-1],len(self.N.N)-1
+        ret = list(a+ k *(b-a)/s for k in range(len(self.N.N)))
+#        print(ret,b)
+        return ret
         
     def __get_a_matrix(self):
         """creats a square tridiagonal matrix of size n"""
@@ -399,7 +400,6 @@ class Interpolation:
         xy[:, 0] = xcoeff
         return(xy)
     def __solve(self,a,b):
-#        self.A = self.__get_a_matrix()
         return np.linalg.solve(a,b.T)
     
     def x(self, x):
@@ -424,7 +424,7 @@ class Surface:
         self.k = deg
         self.knotsu = knotsu
         self.knotsv = knotsv
-        self.spl = Spline(knotsu, deg, self.ctrnet)
+        self.spl = Spline(knotsu, deg)
     
     def __call__(self, u, v):
         innerctrpts = np.array(list(self.spl.eval_vector(self.ctrnet[i], u)[0] for i in range(self.ctrnet.shape[1])))
@@ -439,7 +439,8 @@ class Surface:
         self.X1 = self.Y1 = self.Z1 = np.zeros_like(X)
 #        print(X.shape)
 #        print(self.X1.shape)
-
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
         for col in range(pts):
             tmp = []
             tmp2 = []
@@ -472,11 +473,11 @@ controlnet = np.array([[0.7, -0.4],
                        [0.5, -1.2],
                        [2.0, -.4],
                        [2.3, -.4]])
-def func(ctr, r):
-    A = np.zeros((8,8,3))
-    def aj(j): return (j)/7*2*np.pi
-    for i in range(8):
-        for j in range(8):
+def func(ctr, r, hm):
+    A = np.zeros((hm,hm,3))
+    def aj(j): return (j)/(hm-1)*2*np.pi
+    for i in range(hm):
+        for j in range(hm):
             A[i, j, 0] = ctr[i, 0]
             A[i, j, 1] = ctr[i, 1]+r * np.sin(aj(j))
             A[i, j, 2] = r * np.cos(aj(j))
@@ -487,7 +488,7 @@ def func(ctr, r):
 knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 
 
-#sur = Surface(func(controlnet,0.1), knotsu, knotsv, 3)
+#sur = Surface(func(controlnet,0.1,), knotsu, knotsv, 3)
 #sur.plot(pts = 50)
 #
 #
@@ -515,42 +516,59 @@ knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 #plt.show()
 
 
-pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
+#pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
+#
+#controlnet2 = np.array([[[-2,-2,1],[1/2, 1/2, 1],[2,2,1]],
+#                        [[-2,-2,1], [1, 0, 0],[2,2,1]],
+#                        [[-2,-2,1],[0, 1, 0],[2,2,1]],
+#                        [[-2,-2,1],[1/2, 1/2, 1],[2,2,1]]])
+#knotsu = knotsv = [0,0,0.5,1,1]
+#sur2 = Surface(controlnet2,knotsv,knotsu,1)
+#sur2.plot()
+#plt.savefig("task4.pdf")
+#plt.show()
 
 
-controlnet = np.array([
-                        [[-2,-2,1],[1/2, 1/2, 1]],[[-2,-2,1], [0, 1, 0]],
-                        [[2,2,1], [1/2, 1/2, 1]],[[2,2,1],[1, 0, 0]],
-                        [[2,2,1],[1/2, 1/2, 1]],[[2,2,1], [0, 1, 0]],
-                        [[-2,-2,1], [1/2, 1/2, 1]],[[-2,-2,1],[1, 0, 0]],
-                        [[-2,-2,1],[1, 0, 0]],[[-2,-2,1], [0, 1, 0]],
-                        [[2,2,1],[1, 0, 0]],[[2,2,1], [0, 1, 0]]
-                        ])
-#pts = list()
-knotsu = knotsv = [0,0,1,1]
-#s = Spline(knotsu,k = 1)
-##s.basisplot()
-#pts2 = pts = np.array([[[-2,-2,1], [2,2,1]],[[-2,-2,1], [1, 0, 0]]])
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-color = ["red","black","blue","orange","green","yellow"]
-for i in range(controlnet.shape[0]//2):
-#    print("hej")
-#    print(controlnet[i*2:(i*2)+2])
-    sur = Surface(controlnet[i*2:i*2+2], knotsu, knotsv, 1)
-    sur.plot(pts = 30,color =color[i] )
+
+
+
+knots   = np.array([0, 0, 0, 0,
+                    1/6, 2/6, 3/6, 4/6,
+                    1, 1, 1, 1])
+
+points  = np.array([ [0, 0, 0],
+                     [0, 0, 1],
+                     [0, 0, 2],
+                     [0, 0, 3],
+                     [0, 0, 4],
+                     [0, 0, 5],
+                     [0, 0, 6],
+                     [0, 0, 7],
+                      ])
+
+def func(ctr, r, hm):
+    hm1 = hm -1
+    A = np.zeros( (hm,hm,3) )
+    def a(j): return (j/hm1)*2*np.pi
+    for i in range(hm):
+        w = 1 - i/hm1
+        for j in range(hm):
+            A[i, j, 0] = r*(hm1-ctr[i,2])/hm1*np.cos(a(j))
+            A[i, j, 1] = r*(hm1-ctr[i,2])/hm1*np.sin(a(j))
+            A[i, j, 2] = ctr[i, 2]
+
+    return A
+knots   =[0, 0, 0, 0, 1/6, 2/6, 3/6, 4/6, 1, 1, 1, 1]
+controlnet = func(points, 0.1,8)
+for i in range(controlnet.shape[0]):
+#    print( controlnet[i,:,0:2])
+    I = Interpolation(knots, controlnet[i,:,0:2], k = 3)
+#    I.plotinter()
+    controlnet[i,0:8,0:2] = I.coeff[:,:]
+#    print(controlnet[i,:,0:2])
+#print(func(points,0.1))
+
+
+sur = Surface(controlnet, knots,knots,deg = 3)
+sur.plot(100)
 plt.show()
-#    
-
-#
-#
-
-
-
-
-
-
-
-
-
-

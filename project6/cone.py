@@ -1,3 +1,4 @@
+
 from numpy import *
 from matplotlib.pyplot import *
 from numpy.linalg import solve, norm
