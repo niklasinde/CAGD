@@ -85,18 +85,18 @@ class deBoor:
         list( PLOT(i) for i in range(self.m) )
 
 
-if __name__=='__main__':
-    points = array([ [0,0,0],
-                     [0,0,0.5],
-                     [0,0,1],
-                     [0,0,2] ])
-
-    knots = array([ 0, 0, 0, 0.5, 9, 9, 9])
-    weights = array([ 1, 1, 1, 1])
-    degree = 2
-    A = deBoor(points, knots, knots, degree, degree)
-    #A.NURBS(weights)
-    A.render()
-
-    grid()
-    show()
+#if __name__=='__main__':
+#    points = array([ [0,0,0],
+#                     [0,0,0.5],
+#                     [0,0,1],
+#                     [0,0,2] ])
+#
+#    knots = array([ 0, 0, 0, 0.5, 9, 9, 9])
+#    weights = array([ 1, 1, 1, 1])
+#    degree = 2
+#    A = deBoor(points, knots, knots, degree, degree)
+#    #A.NURBS(weights)
+#    A.render()
+#
+#    grid()
+#    show()
