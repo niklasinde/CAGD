@@ -620,9 +620,6 @@ knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 
 
 control = np.array([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]])
-
-knots =  [0,0,0,np.pi/2,np.pi/2,np.pi,np.pi,3*np.pi/2,3*np.pi/2,2*np.pi,2*np.pi,2*np.pi]
-
 knots = [0,0,0,1,1,2,2,3,3,4,4,4]
 weights = np.array([1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1])
 

@@ -271,6 +271,7 @@ class Spline:
                 Y = self.eval_vector(control,X)
                 plt.plot(Y[:, 0],Y[:, 1], color = "black",linewidth=2)
             else:
+                pass
                 X = np.linspace(knot[i],knot[i+1],30)
                 Y = self.eval_vector(control,X)
                 plt.plot(Y[:, 0],Y[:, 1],linewidth=2)
@@ -340,17 +341,19 @@ class Spline:
     
 # Task 5
 knot = [0, 1/11, 2/11, 3/11, 4/11, 5/11, 6/11, 7/11, 8/11, 9/11, 10/11, 1]
-control = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [9,-1]]) 
-#control2 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [0,0]]) 
-#control3 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [0,0],[9,1]]) 
-#control4 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [0,0], [3,1],[9,1]]) 
+control =  np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,2], [9,-2]]) 
+control2 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [3,1], [0,0]]) 
+control3 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [1,-1], [0,0], [9,-2]]) 
+control4 = np.array([ [0,0], [3,2], [9,-2], [7,-5], [1,-3], [0, 0], [3,2], [9,-2]]) 
 #
 A = Spline(knot,k=3,coeff = control[:,0])
 A.render_vector(control)
-#plt.savefig("Task51.pdf")
 plt.show()
-A.basisplot()
-#plt.savefig("Task51basis.pdf")
+A.render_vector(control2)
+plt.show()
+A.render_vector(control3)
+plt.show()
+A.render_vector(control4)
 plt.show()
 #
 #B = Spline(knot,k=3)
