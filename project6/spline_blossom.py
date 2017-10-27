@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Sep  2 19:03:11 2017
- 
+
 @author: niklasinde
 """
 import sys
@@ -18,7 +18,7 @@ from mpl_toolkits.mplot3d import axes3d
 plt.rcParams["figure.figsize"] = [9, 5]
 np.set_printoptions(linewidth = 1000)
 
-          
+
 class DeBoor:
     def __init__(self, knot, control, deg):
         self.control = control
@@ -74,7 +74,7 @@ class DeBoor:
 class Spline:
     """ Class to calculate a spline"""
 
-    def __init__(self, knot, k=3, coeff=None): 
+    def __init__(self, knot, k=3, coeff=None):
         """
         Knot is the knot vector
         Coefficients are inputed if we have 1d coeffcents else use the eval_vector function.
@@ -84,10 +84,10 @@ class Spline:
                                                                                                         ))+" and you need "+str(k+1))
         if sorted(knot) != knot:
             raise Exception("knot needs to be sorted.")
-        
+
         self.k = k # degree of basis spline
         self.points = knot
-                
+
         self.x = sm.Symbol("x")
 
 
@@ -139,13 +139,13 @@ class Spline:
     def basisfunction(self, knot):
         """
         Creates the basisfunctions
-        
+
         Each basis function consists of its own functions.
         They are stored in n2 and then appended to n1.
-        
+
         This functions then returns n1 and f1. n1 is the lambdified version of f1
         but its not used for computing only if we wich to see the basis equations.
-        
+
         """
         n1 = list()
         f1 = list()
@@ -189,8 +189,8 @@ class Spline:
                 changes.append(i)
         self.__update_basisfunction(changes, newpts)
         self.points = newpts
-        return changes        
-        
+        return changes
+
     def __update_basisfunction(self, listindex: list, newpts: list) -> None:
         """
         Only changes the basisfunction we want
@@ -218,18 +218,18 @@ class Spline:
             n = range(len(self.N))
         else:
             n = i
-        
+
         for i in n:
             for j in range(len(self.N[i])):
                 if self.F[i][j] != 0:
 #                    print(self.F[i][j],"hej")
-                    x = np.linspace(self.points[i + j], 
+                    x = np.linspace(self.points[i + j],
                                     self.points[i + j + 1], 50)
                     y = self.N[i][j](x)
                     plt.plot(x,y)
 
                 else:
-                    x = np.linspace(self.points[i + j], 
+                    x = np.linspace(self.points[i + j],
                                     self.points[i + j + 1], 50)
 #                    print(coeff[i], self.N[i][j](x),"y")
 
@@ -251,18 +251,19 @@ class Spline:
         return func_val
 
     def eval_vector(self, control, x):
-#        print(control,x)
+
         """
         eval_full but the coefficents 2d. (controlpoints)
         """
         if len(self.N) != len(control):
-            raise Exception("You need " + str(len(self.N)) + " controlpoints. Now you have " + str(len(control)))
+            raise Exception("You need " + str(len(self.N)) +
+                            " controlpoints. Now you have "
+                            + str(len(control)))
+
         if np.shape(np.array(x)) != ():
-            return np.array([self.eval_vector(control,x_i) for x_i in x])
+            return np.array([self.eval_vector(control, cx_i) for x_i in x])
 
         hi = self.hotinterval(x)
-#        print(control)
-#        print(control.shape)
         func_val = np.zeros(control.shape[1])
         for i in range(len(self.N)):
             if hi < i or i + self.k < hi:
@@ -273,8 +274,8 @@ class Spline:
         return func_val
 
     def eval_nurbs(self, control, weights, x):
-        print(len(self.N),len(control), len(weights))
-        if len(self.N) != len(control) or len(self.N) !=  len(weights):
+
+        if len(self.N) != len(control) or len(self.N) != len(weights):
             raise Exception("You have {} basisfunction. Now you have {} controlpoints and {} wights".format(len(self.N),len(control), len(weights)) )
         y_list = []
         if np.shape(np.array(x)) != ():
@@ -288,15 +289,14 @@ class Spline:
                 pass
             else:
                 eval_func = self.N[i][hi - i](x)
-                
+
                 teller += control[i] * np.array(eval_func) * np.array(weights[i])
                 denominator += np.array(eval_func) * np.array(weights[i])
-        print(denominator)
         if denominator.any == 0:
             return (teller)
         return teller / denominator
     # Eval functions
-    
+
     def eval_basis(self, x, i):
         hot_interval = self.hotinterval(x)
         if hot_interval < i or i + self.k < hot_interval:
@@ -304,36 +304,38 @@ class Spline:
         else:
             evalfunc = self.coeff[i] * self.N[i][hot_interval - i](x)
             return evalfunc
-    
-    
+
     def hotinterval(self, x):
+
         ### Make a bineary search of hot interval.
         p = self.points
         for i in range(len(p)-1):
             if p[i] <= x and x <= p[i+1]:
                 return i
         raise ValueError(str(x) + " is not in the interval")
-        
+
     def check_full_support(self):
-        FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
+        def fullSupport(knot, t, deg): return knot[deg] <= t <= knot[-deg-1]
+
         for i in range(len(self.points)):
-            if FullSupport(self.points,self.points[i],self.k):
+            if fullSupport(self.points, self.points[i], self.k):
                 pass
             else:
                 print("You dont have full support")
                 return(False)
         return True
-    # plotting functions
-    def plot2D(self, control=None, interpoints=None, pts = 30):
+
+    def plot2D(self, control=None, interpoints=None, pts=30):
+
         """
         plots eval_vector with different colors in each segment
         """
         if np.array(control).shape == ():
             control = self.coeff
         if len(self.N) != len(control):
-            raise Exception("You need "+ str(len(self.N)) + " controlpoints. Now you have " + str(len(control)))
+            raise Exception("You need " + str(len(self.N)) + "controlpoints. Now you have " + str(len(control)))
         knot = self.points
-        
+
         def fullSupport(knot, t, deg): return knot[deg] <= t <= knot[-deg-1]
 
         for i in range(len(self.points)-1):
@@ -345,27 +347,16 @@ class Spline:
             else:
                 X = np.linspace(knot[i], knot[i+1], pts)
                 Y = self.eval_vector(control, X)
-                plt.plot(Y[:, 0], Y[:, 1], linewidth = 2)
+                plt.plot(Y[:, 0], Y[:, 1], linewidth=2)
         if np.array(interpoints).shape != ():
-            plt.scatter(control[:, 0],control[:, 1], color = "red")
-            plt.scatter(interpoints[:,0],interpoints[:, 1], color = "black")
+            plt.scatter(control[:, 0],control[:, 1], color="red")
+            plt.scatter(interpoints[:,0],interpoints[:, 1], color="black")
         else:
             plt.scatter(control[:, 0],control[:, 1])
         plt.show()
 
-#    def plot3d(self, control = None, interpoints = None, pts = 30):
-#        if np.array(control).shape ==():
-#            control = self.coeff
-#        if len(self.N) != len(control):
-#            raise Exception("You need "+ str(len(self.N)) + " controlpoints. Now you have " + str(len(control)))
-#
-#        if np.array(interpoints).shape != ():
-#            plt.scatter(control[:, 0], control[:, 1], color = "red")
-#            plt.scatter(interpoints[:, 0], interpoints[:, 1],color = "black")
-#        else:
-#            plt.scatter(control[:, 0],control[:, 1])
-#        plt.show()
-    def plotnurbs(self, control, weights , pts = 30):
+    def plotnurbs(self, control, weights, pts=30, show=False):
+
         """
         plots eval_vector with different colors in each segment
         """
@@ -374,19 +365,22 @@ class Spline:
         if len(self.N) != len(control) != len(weights):
             raise Exception("You need {} controlpoints. Now you have {} controlpoints and {} wights".format(len(self.N),len(control), len(weights)) )
         knot = self.points
-        
+
         def fullSupport(knot, t, deg): return knot[deg] <= t <= knot[-deg-1]
 
         for i in range(len(self.points)-1):
             X = np.linspace(knot[i], knot[i+1], pts)
             Y = self.eval_nurbs(control, weights, X)
-            if not (fullSupport(knot, knot[i], self.k) and fullSupport(knot, knot[i+1], self.k)):
+            if not (fullSupport(knot, knot[i], self.k) and
+                    fullSupport(knot, knot[i+1], self.k)):
                 plt.plot(Y[:, 0], Y[:, 1], color="black", linewidth=2)
             else:
-                plt.plot(Y[:, 0], Y[:, 1], linewidth = 2)
+                plt.plot(Y[:, 0], Y[:, 1], linewidth=2)
         else:
-            plt.scatter(control[:, 0],control[:, 1])
-#        plt.show()
+            plt.scatter(control[:, 0], control[:, 1])
+        if show:
+            plt.show()
+
 
 class Interpolation:
     def __init__(self, knot, inter_points, k=3):
@@ -395,42 +389,42 @@ class Interpolation:
         self.check_support()
         if type(inter_points) != np.ndarray:
             raise TypeError("We want a np.array")
-        if inter_points.shape[1] not in [2,3]:
-            raise ValueError ("Wrong shape on ther inter_points")
+        if inter_points.shape[1] not in [2, 3]:
+            raise ValueError("Wrong shape on ther inter_points")
         self.inter_points = inter_points
         self.N = Spline(self.knot, k=k)
         self.t = self.get_t_points()
         if self.inter_points.shape[0] != len(self.N.N):
-            raise Exception("Now we have {} basis functions, and {} interpolation points".format(len(self.N.N),len(inter_points)))
+            raise Exception("Now we have {} basis functions,and {} interpolation points".format(len(self.N.N),
+                            len(inter_points)))
         self.coeff = self.getcoefficients()
 
     def check_support(self):
-        FullSupport = lambda knot, t, deg: knot[deg] <= t <= knot[-deg-1]
-        OverSupport = lambda knot, t, deg: (knot[0] == knot[deg+1] or knot[-1] == knot[-deg-2])
+        def fullSupport(knot, t, deg): return knot[deg] <= t <= knot[-deg-1]
+        def overSupport(knot, t, deg): return (knot[0] == knot[deg+1] or knot[-1] == knot[-deg-2])
         for i in range(len(self.knot)-1):
-            if not FullSupport(self.knot, self.knot[i],self.k):
+            if not fullSupport(self.knot, self.knot[i], self.k):
                 raise(Exception("You do not have full support on point " + str(self.knot[i]) +" index "+ str(i)))
-            elif OverSupport(self.knot,self.knot[i],self.k):
+            elif overSupport(self.knot, self.knot[i], self.k):
                 raise(Exception("You have over support dont be stupid"))
         return True
-              
+
     def get_t_points(self):
-        a, b,s = self.knot[0],self.knot[-1],len(self.N.N)-1
-        ret = list(a+ k *(b-a)/s for k in range(len(self.N.N)))
-#        print(ret,b)
+        a, b, s = self.knot[0], self.knot[-1], len(self.N.N)-1
+        ret = list(a + k * (b-a) / s for k in range(len(self.N.N)))
         return ret
-        
+
     def __get_a_matrix(self):
         """creats a square tridiagonal matrix of size n"""
         n = len(self.N.N)
         A = np.zeros((n, n))
         t = self.t
-        
+
         for col in range(n):
             for row in range(n):
                 A[row, col] = self.N.eval_basis(t[row], col)
         return A
-    
+
     def getcoefficients(self):
         self.A = self.__get_a_matrix()
         xcoeff = self.__solve(self.A,self.inter_points[:,0]).reshape((len(self.N.N)))
@@ -445,43 +439,67 @@ class Interpolation:
         return(xy)
     def __solve(self,a,b):
         return np.linalg.solve(a,b.T)
-    
+
     def x(self, x):
         return (self.splinex.evalfull(x))
 
     def y(self, y):
         return (self.spliney.evalfull(y))
 
-    def plotbasis(self, show = False):
+    def plotbasis(self, show=False):
         self.N.basisplot()
         if show:
             plt.show()
 
-    def plotinter(self, show = False, pts=100):
+    def plotinter(self, show=False, pts=100):
         self.N.plot2D(self.coeff, self.inter_points)
         if show:
             plt.show()
 
+
 class Surface:
-    def __init__(self, controlnet, knotsu, knotsv, deg):
+    def __init__(self, controlnet, knotsu, knotsv: np.dtype, deg: list, weights = None):
         self.ctrnet = controlnet
         self.k = deg
         self.knotsu = knotsu
         self.knotsv = knotsv
-        self.spl = Spline(knotsu, deg)
-    
+        self.splu = Spline(knotsu, deg[0])
+        self.splv = Spline(knotsv, deg[1])
+
+
+        self.weights = weights
+
     def __call__(self, u, v):
-        innerctrpts = np.array(list(self.spl.eval_vector(self.ctrnet[i], u) for i in range(self.ctrnet.shape[1])))
-#        print("hej \n",innerctrpts,"innerctrpts \n")
+        innerctrpts = np.array(list(self.splu.eval_vector(self.ctrnet[i], u)
+                                for i in range(self.ctrnet.shape[1])))
         ret = self.spl.eval_vector(innerctrpts, v)
         return(ret)
+        
+    def nurbescall(self, u, v):
+        
+        # ugly solution
+        den = 0
+        for p in range(len(self.splu.N)-1):
+            evalu = self.splu.eval_basis(u, p)
+            for q in range(len(self.splv.N)-1):
+                evalv = self.splv.eval_basis(v, q)
+                print(evalu*evalv*self.weights[q])
+                den += evalu*evalv*self.weights[p,q]
+        print(den,"den")
+        def nurbbasis(i,j,u,v,denominator): return (self.splu.eval_basis(u,i) * 
+                      self.splv.eval_basis(v,j) * self.weights[i,j]/denominator)
+        ret = 0
+        for i in range(len(self.splu.N)-1):
+            for j in range(len(self.splv.N)-1):
+                print(nurbbasis(i,j,u,v,den),self.ctrnet[i,j])
+                ret += nurbbasis(i,j,u,v,den)*self.ctrnet[i,j]
+        return ret
 
-    def plot(self, pts = 200,color = "black"):
+    def plotspline(self, pts=200,color="black"):
+        if self.weigts == None:
+            raise ValueError("You probs wanna do a nurbsplot")
         X, Y = np.meshgrid(np.linspace(self.knotsu[0], self.knotsu[-1], pts),
                             np.linspace(self.knotsv[0], self.knotsv[-1], pts))
-        self.X1 = self.Y1 = self.Z1 = np.zeros_like(X)
-#        print(X.shape)
-#        print(self.X1.shape)
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         for col in range(pts):
@@ -491,149 +509,143 @@ class Surface:
                 ret = self.__call__(X[row, col], Y[row, col])
                 ret2 = self.__call__(X[col,row], Y[col,row])
                 tmp.append(ret)
-                tmp2.append(ret2)   
+                tmp2.append(ret2)
             tmp2 = np.array(tmp2)
             tmp = np.array(tmp)
 
             ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c=color)
             ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c=color)
-#            ax.set_xlim3d(, 2)
-#            ax.set_ylim3d(-1, 1)
-#            ax.set_zlim3d(0, 2)
-        
-#        plt.contourf(X, Y, self.Z1)
-
-#        plt.show()
-#        return(X,Y)
-
-controlnet = np.array([[0.7, -0.4],
-                       [1.0, -0.4],
-                       [2.5, -1.2],
-                       [3.2, -.5],
-                       [-0.2, -.5],
-                       [0.5, -1.2],
-                       [2.0, -.4],
-                       [2.3, -.4]])
-def func(ctr, r, hm):
-    A = np.zeros((hm,hm,3))
-    def aj(j): return (j)/(hm-1)*2*np.pi
-    for i in range(hm):
-        for j in range(hm):
-            A[i, j, 0] = ctr[i, 0]
-            A[i, j, 1] = ctr[i, 1]+r * np.sin(aj(j))
-            A[i, j, 2] = r * np.cos(aj(j))
-    return A
-
+    def plotnurbs(self, pts= 200, color="black"):
+        print(len(self.splu.N),len(self.weights), self.ctrnet.shape)
+        X, Y = np.meshgrid(np.linspace(self.knotsu[0], self.knotsu[-1], pts),
+                            np.linspace(self.knotsv[0], self.knotsv[-1], pts))
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        for col in range(pts):
+            tmp = []
+            tmp2 = []
+            for row in range(pts):
+                ret = self.nurbescall(X[row, col], Y[row, col])
+                ret2 = self.nurbescall(X[col,row], Y[col,row])
+                tmp.append(ret)
+                tmp2.append(ret2)
+            tmp2 = np.array(tmp2)
+            tmp = np.array(tmp)
+            ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c=color)
+            ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c=color)
         
 
-knotsu = knotsv = [1, 1, 1, 1, 6/5, 7/5, 8/5, 9/5, 2, 2, 2, 2]
 
-
-#sur = Surface(func(controlnet,0.1,), knotsu, knotsv, 3)
-#sur.plot(pts = 50)
-#
-#
-#a = func(controlnet,0.1)
-#plt.show()
-#
-#
-#
-#
-#fig = plt.figure()
-#ax = fig.add_subplot(111, projection='3d')
-##
-#pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
-##
- #for pt in pts:
-#    ax.scatter(pt[0], pt[1], pt[2], c="black")
-#    for pt2 in pts:
-#        if pt != pt2:
-#            ax.plot((pt[0],pt2[0]),(pt[1],pt2[1]),(pt[2],pt2[2]))
-#
-#ax.set_xlabel('X Label')
-#ax.set_ylabel('Y Label')
-#ax.set_zlabel('Z Label')
-#plt.savefig("task4.pdf")
-#plt.show()
-
-
-#pts = [[-2,-2,1], [2,2,1], [1, 0, 0], [0, 1, 0], [1/2, 1/2, 1]]
-#
-#controlnet2 = np.array([[[-2,-2,1],[1/2, 1/2, 1],[2,2,1]],
-#                        [[-2,-2,1], [1, 0, 0],[2,2,1]],
-#                        [[-2,-2,1],[0, 1, 0],[2,2,1]],
-#                        [[-2,-2,1],[1/2, 1/2, 1],[2,2,1]]])
-#knotsu = knotsv = [0,0,0.5,1,1]
-#sur2 = Surface(controlnet2,knotsv,knotsu,1)
-#sur2.plot()
-#plt.savefig("task4.pdf")
-#plt.show()
-
-
-
-#
-#
-#knots   = np.array([0, 0, 0, 0,
-#                    1/6, 2/6, 3/6, 4/6,
-#                    1, 1, 1, 1])
-#
-#points  = np.array([ [0, 0, 0],
-#                     [0, 0, 1],
-#                     [0, 0, 2],
-#                     [0, 0, 3],
-#                     [0, 0, 4],
-#                     [0, 0, 5],
-#                     [0, 0, 6],
-#                     [0, 0, 7],
-#                     [0,0,8]
-#                      ])
-#
-#def func(ctr, r, hm):
-#    hm1 = hm -1
-#    A = np.zeros( (hm,hm,3) )
-#    def a(j): return (j/hm1)*2*np.pi
-#    for i in range(hm):
-#        w = 1 - i/hm1
-#        for j in range(hm):
-#            A[i, j, 0] = r*(hm1-ctr[i,2])/hm1*np.cos(a(j))
-#            A[i, j, 1] = r*(hm1-ctr[i,2])/hm1*np.sin(a(j))
-#            A[i, j, 2] = ctr[i, 2]
-#
-#    return A
-#knots   =[0, 0, 0, 0, 1/6, 2/6, 3/6, 4/6, 5/6 , 1, 1, 1, 1]
-#controlnet = func(points, 0.1,9)
-#print(controlnet)
-#for i in range(controlnet.shape[0]):
-##    print( controlnet[i,:,0:2])
-#    S = Spline(knots,k = 3, coeff = controlnet[i] )
-#    I = Interpolation(knots, controlnet[i,:,0:2], k = 3)
-##    I.plotinter()
-##    S.plot2D()
-#    controlnet[i,0:9,0:2] = I.coeff[:,:]
-##    print(controlnet[i,:,0:2])
-##print(func(points,0.1))
-#
-#
-#sur = Surface(controlnet, knots,knots,deg = 3)
-#sur.plot(50)
-#plt.show()
-
-
-control = np.array([[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1], [1, 0]])
-knots = [0,0,0,1,1,2,2,3,3,4,4,4]
-weights = np.array([1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1])
-
-s = Spline(knots, k = 2)
-s.plotnurbs(control,weights)
-plt.axis("equal")
-plt.show()
+def square3d():
+    controlnet = np.array([[[-2,-2,1],[1/2, 1/2, 1],[2,2,1]],
+                            [[-2,-2,1], [1, 0, 0],[2,2,1]],
+                            [[-2,-2,1],[0, 1, 0],[2,2,1]],
+                            [[-2,-2,1],[1/2, 1/2, 1],[2,2,1]]])
+    knotsu = knotsv = [0,0,0.5,1,1]
+    sur2 = Surface(controlnet,knotsv,knotsu,1)
+    sur2.plot()
+    plt.savefig("task4.pdf")
+    plt.show()
 
 
 
 
+def cone():
+    knots   = np.array([0, 0, 0, 0,
+                        1/6, 2/6, 3/6, 4/6,
+                        1, 1, 1, 1])
+
+    points  = np.array([ [0, 0, 0],
+                         [0, 0, 1],
+                         [0, 0, 2],
+                         [0, 0, 3],
+                         [0, 0, 4],
+                         [0, 0, 5],
+                         [0, 0, 6],
+                         [0, 0, 7],
+                         [0,0,8]
+                          ])
+
+    def func(ctr, r, hm):
+        hm1 = hm -1
+        A = np.zeros( (hm,hm,3) )
+        def a(j): return (j/hm1)*2*np.pi
+        for i in range(hm):
+            w = 1 - i/hm1
+            for j in range(hm):
+                A[i, j, 0] = r*(hm1-ctr[i,2])/hm1*np.cos(a(j))
+                A[i, j, 1] = r*(hm1-ctr[i,2])/hm1*np.sin(a(j))
+                A[i, j, 2] = ctr[i, 2]
+
+        return A
+    knots   =[0, 0, 0, 0, 1/6, 2/6, 3/6, 4/6, 5/6 , 1, 1, 1, 1]
+    controlnet = func(points, 0.1,9)
+    for i in range(controlnet.shape[0]):
+        S = Spline(knots, k=3, coeff=controlnet[i])
+        I = Interpolation(knots, controlnet[i,:,0:2], k=3)
+    #    I.plotinter()
+    #    S.plot2D()
+        controlnet[i,0:9,0:2] = I.coeff[:,:]
+
+    sur = Surface(controlnet, knots, knots, deg=3)
+    sur.plot(50)
+    plt.show()
+
+def circle():
+    control = np.array([[1, 0], [1, 1],
+                        [0, 1], [-1, 1],
+                        [-1, 0], [-1, -1],
+                        [0, -1], [1, -1],
+                        [1, 0]])
+    knots = [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4]
+    weights = np.array([1, np.sqrt(2)/2,
+                          1, np.sqrt(2)/2,
+                          1, np.sqrt(2)/2,
+                          1, np.sqrt(2)/2,
+                          1])
+
+    s = Spline(knots, k=2)
+    s.plotnurbs(control, weights)
+    plt.axis("equal")
+    plt.show()
+    print(weights)
+
+
+#def cone2():
+control = np.array([[1, 0], 
+                    [1, 1],
+                    [0, 1], 
+                    [-1, 1],
+                    [-1, 0], 
+                    [-1, -1],
+                    [0, -1], 
+                    [1, -1],
+                    [1, 0]])
+
+weights = np.array([[1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
+                    [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1]])
+
+weightsnet = np.array(list(weights for i in range(10)))
+
+controlnet = np.array(list(i/9*control for i in range(9)))
+
+knots = [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4]
+
+sur = Surface(controlnet,knots,knots,deg = [2,1],weights = weights)
+
+sur.plotnurbs(pts=10)
 
 
 
 
-
-
+    
+    
+    
+    
