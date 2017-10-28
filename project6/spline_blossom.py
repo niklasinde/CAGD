@@ -479,19 +479,21 @@ class Surface:
         
         # ugly solution
         den = 0
-        for p in range(len(self.splu.N)-1):
+        for p in range(len(self.splu.N)):
             evalu = self.splu.eval_basis(u, p)
-            for q in range(len(self.splv.N)-1):
+            for q in range(len(self.splv.N)):
                 evalv = self.splv.eval_basis(v, q)
-                print(evalu*evalv*self.weights[q])
+#                print(evalu*evalv*self.weights[q])
                 den += evalu*evalv*self.weights[p,q]
-        print(den,"den")
+        if den == 0:
+            raise ValueError("")
         def nurbbasis(i,j,u,v,denominator): return (self.splu.eval_basis(u,i) * 
                       self.splv.eval_basis(v,j) * self.weights[i,j]/denominator)
-        ret = 0
-        for i in range(len(self.splu.N)-1):
-            for j in range(len(self.splv.N)-1):
-                print(nurbbasis(i,j,u,v,den),self.ctrnet[i,j])
+        ret = np.zeros((3,))
+        for i in range(len(self.splu.N)):
+            for j in range(len(self.splv.N)):
+#                print(nurbbasis(i,j,u,v,den),self.ctrnet[i,j])
+#                print(self.ctrnet[i,j].shape)
                 ret += nurbbasis(i,j,u,v,den)*self.ctrnet[i,j]
         return ret
 
@@ -503,6 +505,7 @@ class Surface:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         for col in range(pts):
+
             tmp = []
             tmp2 = []
             for row in range(pts):
@@ -516,12 +519,13 @@ class Surface:
             ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c=color)
             ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c=color)
     def plotnurbs(self, pts= 200, color="black"):
-        print(len(self.splu.N),len(self.weights), self.ctrnet.shape)
+#        print(len(self.splu.N),len(self.weights), self.ctrnet.shape)
         X, Y = np.meshgrid(np.linspace(self.knotsu[0], self.knotsu[-1], pts),
                             np.linspace(self.knotsv[0], self.knotsv[-1], pts))
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         for col in range(pts):
+            print(col/pts)
             tmp = []
             tmp2 = []
             for row in range(pts):
@@ -531,6 +535,7 @@ class Surface:
                 tmp2.append(ret2)
             tmp2 = np.array(tmp2)
             tmp = np.array(tmp)
+#            print(tmp,"tmp \n")
             ax.plot(tmp[:, 0], tmp[:, 1], tmp[:, 2], alpha=0.5, c=color)
             ax.plot(tmp2[:, 0], tmp2[:, 1], tmp2[:, 2], alpha=0.5, c=color)
         
@@ -604,7 +609,7 @@ def circle():
                           1, np.sqrt(2)/2,
                           1])
 
-    s = Spline(knots, k=2)
+    s = Spline(knots, k=[3,3])
     s.plotnurbs(control, weights)
     plt.axis("equal")
     plt.show()
@@ -631,18 +636,30 @@ weights = np.array([[1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sq
                     [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
                     [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1],
                     [1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1, np.sqrt(2)/2, 1]])
+A = list()
+for j in (range(control.shape[0])):
+    A1 = []
+    for i in range(control.shape[0]):
+        print(j)
+        a = np.zeros((3,))
+        a[0:2] = (control.shape[0]-1-j)/(control.shape[0]-1) * control[i]
+        a[2] = j / (control.shape[0]-1)
 
-weightsnet = np.array(list(weights for i in range(10)))
+        A1.append(a)
 
-controlnet = np.array(list(i/9*control for i in range(9)))
+    A.append(A1)
+    
+A = np.array(A)
+
+#controlnet = np.array(list(i/9*control for i in range(9)))
 
 knots = [0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4]
 
-sur = Surface(controlnet,knots,knots,deg = [2,1],weights = weights)
+sur = Surface(A,knots,knots,deg = [2,2],weights = weights)
 
-sur.plotnurbs(pts=10)
+sur.plotnurbs(pts=100)
 
-
+plt.show()
 
 
     
